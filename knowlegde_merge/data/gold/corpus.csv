@@ -1,0 +1,247 @@
+article_id,subject,predicate,object
+3cb7cc86cf182492,republican party,lost,united states midterm elections
+3cb7cc86cf182492,democrats,won,congress
+3cb7cc86cf182492,thomas massie,lost,republican house primary
+3cb7cc86cf182492,thomas massie,accused,pete hegseth
+3cb7cc86cf182492,thomas massie,called_on,pete hegseth
+3cb7cc86cf182492,us,abducted,nicolas maduro
+3cb7cc86cf182492,us,abducted,cilia flores
+3cb7cc86cf182492,thom tillis,backed,pete hegseth
+3cb7cc86cf182492,thom tillis,urged,donald trump
+3cb7cc86cf182492,senate,acquitted,donald trump
+3cb7cc86cf182492,senate,acquitted,alejandro mayorkas
+3cb7cc86cf182492,senate,acquitted,william belknap
+3cb7cc86cf182492,house of representatives,impeached,donald trump
+3cb7cc86cf182492,paul musgrave,employed_by,georgetown university
+4d6c5216fce3e630,alex karp,leads,palantir
+4d6c5216fce3e630,alex karp,visited,kyiv
+4d6c5216fce3e630,palantir,located_in,florida
+4d6c5216fce3e630,ukraine's ministry of defence,partnered_with,palantir
+4d6c5216fce3e630,nhs,signed_with,palantir
+4d6c5216fce3e630,amnesty international,accused,palantir
+4d6c5216fce3e630,palantir,assisted,israel
+4d6c5216fce3e630,palantir,assisted,donald trump
+4d6c5216fce3e630,palantir,signed_with,nebius
+4d6c5216fce3e630,nebius,spun_off_from,yandex
+4d6c5216fce3e630,yasir atalan,employed_by,center for strategic and international studies
+4d6c5216fce3e630,anna nadibaidze,employed_by,university of southern denmark
+4d6c5216fce3e630,palantir,named_after,lord of the rings
+4d6c5216fce3e630,britain,reviewed_data_contract_with,palantir
+4d6c5216fce3e630,denys shtilerman,co_owned,fire point
+4d6c5216fce3e630,ukraine,relied_on,starlink
+4dd06a88f770a2b8,emmanuel macron,convened,defence and security meeting
+4dd06a88f770a2b8,emmanuel macron,leads,france
+4dd06a88f770a2b8,paris,located_in,france
+4dd06a88f770a2b8,marseille,located_in,france
+4dd06a88f770a2b8,lyon,located_in,france
+4dd06a88f770a2b8,nantes,located_in,france
+4dd06a88f770a2b8,lille,located_in,france
+4dd06a88f770a2b8,rebecca collard,reported_from,marseille
+4dd06a88f770a2b8,g7 foreign ministers' meeting,moved_to,paris
+4dd06a88f770a2b8,g7 foreign ministers' meeting,moved_from,marseille
+4dd06a88f770a2b8,rebecca collard,works_for,al jazeera
+4dd06a88f770a2b8,paris,is_capital_of,france
+4dd06a88f770a2b8,hugo,protested_in,lille
+5bf51db116d86b97,cristiano ronaldo,retired_from,international football
+5bf51db116d86b97,cristiano ronaldo,played_in,european championships
+5bf51db116d86b97,cristiano ronaldo,captained,portugal
+5bf51db116d86b97,cristiano ronaldo,won,nations league
+5bf51db116d86b97,pff,fined,cristiano ronaldo
+5bf51db116d86b97,pff,suspended,cristiano ronaldo
+5bf51db116d86b97,cristiano ronaldo,fell_out_with,jorge jesus
+5bf51db116d86b97,portugal,lost_to,spain
+5bf51db116d86b97,lionel messi,retired_from,international football
+5bf51db116d86b97,jorge jesus,coached,portugal
+5bf51db116d86b97,cristiano ronaldo,played_in,world cup
+5bf51db116d86b97,portugal,won,european championships
+5bf51db116d86b97,spain,won,world cup
+658b16237c59e586,bako ambianda,leads,backbone capital ventures
+658b16237c59e586,samuel amegayibor,leads,ghana real estate developers association
+658b16237c59e586,isaac ayitey chris-quaye,co_founded,neurahomes
+658b16237c59e586,william atitso amankwah,founded,awa roofing sheets
+658b16237c59e586,acheampong builderman,leads,builderman estates
+658b16237c59e586,ghana real estate developers association,proposed,national housing authority
+658b16237c59e586,africa real estate conference & expo,held_in,accra
+658b16237c59e586,ahmed ibrahim,represented,john dramani mahama
+658b16237c59e586,john dramani mahama,announced_funding_for,national housing fund
+658b16237c59e586,bako ambianda,was_keynote_speaker_at,africa real estate conference & expo
+658b16237c59e586,green city project,located_in,dedesua
+69d33865f6d0a674,al-aqsa martyrs hospital,located_in,deir el-balah
+69d33865f6d0a674,al-baraka,located_in,deir el-balah
+69d33865f6d0a674,israeli forces,attacked,bureij refugee camp
+69d33865f6d0a674,israeli drone,killed,abdul rahim walid matar
+69d33865f6d0a674,israeli drone,struck,al-baraka
+69d33865f6d0a674,israeli artillery,shelled,gaza city
+69d33865f6d0a674,israeli forces,advanced_into,al-musaddar
+69d33865f6d0a674,israeli forces,advanced_into,deir el-balah
+69d33865f6d0a674,israel,violated,ceasefire
+69d33865f6d0a674,al-karama,located_northwest_of,gaza city
+69d33865f6d0a674,hosni al-musaddar mosque,located_east_of,maghazi camp
+79e2afd271239c11,joshua wong,co_founded,scholarism
+79e2afd271239c11,joshua wong,co_founded,demosisto
+79e2afd271239c11,nathan law,co_founded,demosisto
+79e2afd271239c11,agnes chow,co_founded,demosisto
+79e2afd271239c11,beijing,introduced,nsl
+79e2afd271239c11,nathan law,left_for,uk
+79e2afd271239c11,frances hui,located_in,us
+79e2afd271239c11,john lee,leads,hong kong
+79e2afd271239c11,joshua wong,located_in,hong kong
+7bb8998eca362376,vladimir putin,invaded,ukraine
+7bb8998eca362376,russia,attacked,kamyshuvakha
+7bb8998eca362376,kamyshuvakha,located_in,zaporizhzhia
+7bb8998eca362376,kamyshuvakha,located_in,ukraine
+7bb8998eca362376,zaporizhzhia,located_in,ukraine
+7bb8998eca362376,volodymyr zelensky,visited,spain
+7bb8998eca362376,volodymyr zelensky,met_with,steve witkoff
+7bb8998eca362376,volodymyr zelensky,met_with,jared kushner
+7bb8998eca362376,volodymyr zelensky,accused,russia
+7bb8998eca362376,steve witkoff,served_as_envoy_for,donald trump
+7bb8998eca362376,jared kushner,served_as_envoy_for,donald trump
+803543351508da24,cdc,awarded,university of southern denmark
+803543351508da24,bandim health project,operated_in,guinea-bissau
+803543351508da24,bandim health project,located_in,bissau
+803543351508da24,guinea-bissau's judicial police,searched,bandim health project
+803543351508da24,guinea-bissau's government,requested,africa centres for disease control and prevention
+803543351508da24,world health organization,worked_with,guinea-bissau's government
+803543351508da24,walter kazadi mulombo,represented,world health organization
+803543351508da24,gavin yamey,employed_by,duke university
+803543351508da24,guinea-bissau's government,prohibited,hepatitis b vaccine trials
+803543351508da24,guinea-bissau's judicial police,seized,hepatitis b vaccines
+803543351508da24,world health organization,recommended,hepatitis b vaccine
+803543351508da24,jakob grauslund,served_as_dean_of,university of southern denmark
+8fe19bb2da564bf4,pope leo xiv,hosted,bob dylan
+8fe19bb2da564bf4,bob dylan,gifted,chronicles: volume one
+8fe19bb2da564bf4,pope leo xiv,quoted,go away you bomb
+8fe19bb2da564bf4,pope leo xiv,resides_in,apostolic palace
+8fe19bb2da564bf4,bob dylan,performed_for,pope john paul ii
+8fe19bb2da564bf4,bob dylan,performed_at,national eucharistic congress
+8fe19bb2da564bf4,national eucharistic congress,located_in,bologna
+8fe19bb2da564bf4,bob dylan,performed,knockin' on heaven's door
+8fe19bb2da564bf4,pope john paul ii,quoted,blowin' in the wind
+8fe19bb2da564bf4,pope leo xiv,referenced,bob dylan
+8fe19bb2da564bf4,pope leo xiv,born_in,chicago
+8fe19bb2da564bf4,bob dylan,scheduled_to_perform_at,palazzo dello sport
+91d14ab3986f49ad,nitesh tiwari,directed,ramayana: rise of a legend
+91d14ab3986f49ad,ranbir kapoor,played,lord ram
+91d14ab3986f49ad,sai pallavi,played,sita
+91d14ab3986f49ad,yash,played,ravana
+91d14ab3986f49ad,ravana,kidnapped,sita
+91d14ab3986f49ad,namit malhotra,leads,dneg
+91d14ab3986f49ad,dneg,worked_on,dune
+91d14ab3986f49ad,dneg,worked_on,interstellar
+91d14ab3986f49ad,doordarshan,broadcast,ramayan
+91d14ab3986f49ad,arun govil,played,ram
+91d14ab3986f49ad,arun govil,played,dasharatha
+91d14ab3986f49ad,namit malhotra,produced,ramayana: rise of a legend
+91d14ab3986f49ad,ar rahman,collaborated_with,hans zimmer
+91d14ab3986f49ad,arvind rajagopal,employed_by,new york university
+91d14ab3986f49ad,adipurush,retold,ramayana
+a582647bb3efd945,jordan's public security directorate,identified,corporal jawad ali khalaf al-salaita
+a582647bb3efd945,corporal jawad ali khalaf al-salaita,guarded,sri lankan embassy
+a582647bb3efd945,corporal jawad ali khalaf al-salaita,killed_in,amman
+a582647bb3efd945,sri lankan embassy,located_in,amman
+a582647bb3efd945,medina al-munawwara street,located_in,amman
+a582647bb3efd945,karak,located_in,jordan
+a582647bb3efd945,jordan,struck,syria
+a582647bb3efd945,amer al-sartawi,spokesperson_for,jordan's public security directorate
+a582647bb3efd945,tamer al-samadi,worked_for,al jazeera
+a582647bb3efd945,tamer al-samadi,reported_from,aqaba
+b42362010773cd79,democrats,took_control_of,senate
+b42362010773cd79,democrats,took_control_of,house of representatives
+b42362010773cd79,democrats,held,michigan
+b42362010773cd79,democrats,held,florida 14
+b42362010773cd79,democrats,held,florida 25
+b42362010773cd79,democrats,won,florida 22
+b42362010773cd79,democrats,won,texas
+b42362010773cd79,democrats,won,ohio
+b42362010773cd79,democrats,won,maine
+b42362010773cd79,hispanic voters,backed,james talarico
+b42362010773cd79,hispanic voters,backed,donald trump
+b42362010773cd79,cbs news,was_partner_of,bbc
+b42362010773cd79,florida 22,was_redrawn_to_favour,republicans
+ba26403f95e15c7c,marylise léon,leads,cfdt
+ba26403f95e15c7c,black bloc,attacked,lyon
+ba26403f95e15c7c,louvre,located_in,paris
+ba26403f95e15c7c,place de la bastille,located_in,paris
+ba26403f95e15c7c,place de la concorde,located_in,paris
+ba26403f95e15c7c,place de la république,located_in,paris
+ba26403f95e15c7c,place de la nation,located_in,paris
+ba26403f95e15c7c,national assembly,located_in,paris
+ba26403f95e15c7c,élysée palace,located_in,paris
+ba26403f95e15c7c,hôtel matignon,located_in,paris
+be5639c6e2976d19,democrats,took_control_of,congress
+be5639c6e2976d19,democrats,impeached,donald trump
+be5639c6e2976d19,us senate,acquitted,donald trump
+be5639c6e2976d19,republicans,cut,medicaid
+be5639c6e2976d19,republicans,cut,obamacare marketplace
+be5639c6e2976d19,hakeem jeffries,leads,house democrats
+be5639c6e2976d19,robert garcia,leads,house oversight committee
+be5639c6e2976d19,donald trump,posted_on,truth social
+be5639c6e2976d19,us house,passed,resolution to halt hostilities with iran
+be5639c6e2976d19,donald trump,ignored,resolution to halt hostilities with iran
+be5639c6e2976d19,casey burgat,is_professor_at,george washington university
+be5639c6e2976d19,scott anderson,is_senior_fellow_at,brookings institution
+d14ba9ab2392f0f9,trump,started_war_with,iran
+d14ba9ab2392f0f9,trump,withdrew_support_for,ukraine
+d14ba9ab2392f0f9,trump,called_for_resignation_of,volodymyr zelenskyy
+d14ba9ab2392f0f9,republicans,lost_control_of,house of representatives
+d14ba9ab2392f0f9,republicans,lost_control_of,senate
+d14ba9ab2392f0f9,georgia,elected,keisha lance bottoms
+d14ba9ab2392f0f9,gina hinojosa,became_governor_of,texas
+d14ba9ab2392f0f9,deb haaland,became_governor_of,new mexico
+d14ba9ab2392f0f9,russia,struck,kyiv
+d14ba9ab2392f0f9,ukraine,accused,us
+d14ba9ab2392f0f9,abdul el-sayed,won_senate_seat_for,michigan
+d14ba9ab2392f0f9,biden administration,continued_military_support_for,israel
+d14ba9ab2392f0f9,israel,launched_war_on,gaza
+d14ba9ab2392f0f9,aipac,campaigned_against,abdul el-sayed
+e626a6401717156f,jennifer balcarras,died_in,british columbia
+e626a6401717156f,selah reed,died_in,british columbia
+e626a6401717156f,jennifer balcarras,mother_of,selah reed
+e626a6401717156f,jennifer balcarras,moved_to,bella coola
+e626a6401717156f,british columbia,banned,hunting grizzly bears for sport
+e626a6401717156f,royal canadian mounted police,cooperated_with,bc conservation officer service
+e626a6401717156f,jeff tyre,worked_for,bc conservation officer service
+e626a6401717156f,jesse zeman,leads,bc wildlife federation
+e626a6401717156f,british columbia,located_in,canada
+e626a6401717156f,josh balcarras,brother_of,jennifer balcarras
+e626a6401717156f,jennifer balcarras,remains_found_in,bella coola
+e626a6401717156f,selah reed,remains_found_in,bella coola
+e626a6401717156f,"ministry of environment, lands and parks",classified_as_vulnerable,grizzly bears
+e8db9958c58d55ef,jd vance,blamed,iran war
+e8db9958c58d55ef,us,attacked,tehran
+e8db9958c58d55ef,israel,attacked,tehran
+e8db9958c58d55ef,democrats,took_control_of,us house of representatives
+e8db9958c58d55ef,democrats,took_control_of,senate
+e8db9958c58d55ef,donald trump,praised,jd vance
+e8db9958c58d55ef,donald trump,praised,marco rubio
+e8db9958c58d55ef,donald trump,agreed_with,jd vance
+e8db9958c58d55ef,jd vance,showed,donald trump
+e8db9958c58d55ef,donald trump,defended,iran war
+e8db9958c58d55ef,jd vance,supported,iran war
+e8db9958c58d55ef,daniel byman,employed_by,center for strategic and international studies
+f22a5b47adbf10db,el niño,heated,pacific ocean
+f22a5b47adbf10db,typhoon champi,skirted,taiwan
+f22a5b47adbf10db,typhoon chan-hom,crossed,japan
+f22a5b47adbf10db,super typhoon dolphin,struck,china
+f22a5b47adbf10db,super typhoon dolphin,churned_across,pacific ocean
+f22a5b47adbf10db,tropical storm narra,grazed,china
+f22a5b47adbf10db,tropical storm narra,grazed,guangxi
+f22a5b47adbf10db,typhoon mekkhala,approached,japan
+f22a5b47adbf10db,severe tropical storm higos,approached,japan
+f22a5b47adbf10db,typhoon saudel,made_landfall_in,china
+f22a5b47adbf10db,rafaela jane delfino,located_in,manila
+f22a5b47adbf10db,rafaela jane delfino,simulated,super typhoon haiyan
+f3989377ad577a6c,african national congress,agreed_with,democratic alliance
+f3989377ad577a6c,democratic alliance,unseated,african national congress
+f3989377ad577a6c,democratic alliance,governed,cape town
+f3989377ad577a6c,helen zille,leads,democratic alliance
+f3989377ad577a6c,jacob zuma,founded,umkhonto wesizwe (mk) party
+f3989377ad577a6c,melanie verwoerd,served_as_ambassador_to,ireland
+f3989377ad577a6c,mduduzi makhubo,lived_in,soweto
+f3989377ad577a6c,ethekwini,included,durban
+f3989377ad577a6c,durban,located_in,kwazulu-natal
+f3989377ad577a6c,umkhonto wesizwe (mk) party,was_largest_party_in,kwazulu-natal
+f3989377ad577a6c,jacob zuma,served_as_president_of,south africa
+f3989377ad577a6c,helen zille,served_as_mayor_of,cape town
+f3989377ad577a6c,johannesburg,was_located_in,gauteng

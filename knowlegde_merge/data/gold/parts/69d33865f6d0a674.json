@@ -1,0 +1,60 @@
+{
+  "article_id": "69d33865f6d0a674",
+  "triples": [
+    {
+      "subject": "Al-Aqsa Martyrs Hospital",
+      "predicate": "located_in",
+      "object": "Deir el-Balah"
+    },
+    {
+      "subject": "al-Baraka",
+      "predicate": "located_in",
+      "object": "Deir el-Balah"
+    },
+    {
+      "subject": "Israeli forces",
+      "predicate": "attacked",
+      "object": "Bureij refugee camp"
+    },
+    {
+      "subject": "Israeli drone",
+      "predicate": "killed",
+      "object": "Abdul Rahim Walid Matar"
+    },
+    {
+      "subject": "Israeli drone",
+      "predicate": "struck",
+      "object": "al-Baraka"
+    },
+    {
+      "subject": "Israeli artillery",
+      "predicate": "shelled",
+      "object": "Gaza City"
+    },
+    {
+      "subject": "Israeli forces",
+      "predicate": "advanced_into",
+      "object": "al-Musaddar"
+    },
+    {
+      "subject": "Israeli forces",
+      "predicate": "advanced_into",
+      "object": "Deir el-Balah"
+    },
+    {
+      "subject": "Israel",
+      "predicate": "violated",
+      "object": "ceasefire"
+    },
+    {
+      "subject": "al-Karama",
+      "predicate": "located_northwest_of",
+      "object": "Gaza City"
+    },
+    {
+      "subject": "Hosni al-Musaddar Mosque",
+      "predicate": "located_east_of",
+      "object": "Maghazi camp"
+    }
+  ]
+}

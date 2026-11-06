@@ -1,0 +1,15 @@
+{
+  "article_id": "25428ec3a429f08f",
+  "lang": "zh",
+  "annotator": "model-assisted (2026-11-06)",
+  "triples": [
+    {"subject": "超聚变", "predicate": "上市", "object": "创业板"},
+    {"subject": "龙行天下", "predicate": "上市", "object": "沪市主板"},
+    {"subject": "铁近科技", "predicate": "上市", "object": "北交所"},
+    {"subject": "星基智造", "predicate": "上市", "object": "北交所"},
+    {"subject": "中信证券", "predicate": "保荐", "object": "超聚变"},
+    {"subject": "招商证券", "predicate": "保荐", "object": "龙行天下"},
+    {"subject": "中信建投证券", "predicate": "保荐", "object": "铁近科技"},
+    {"subject": "财通证券", "predicate": "保荐", "object": "星基智造"}
+  ]
+}

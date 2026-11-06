@@ -1,0 +1,10 @@
+.venv/
+.kgvenv/
+.nltk_data/
+.tmp/
+.pipcache/
+__pycache__/
+*.pyc
+out/
+data/raw/
+.env

@@ -1,0 +1,16 @@
+{
+  "article_id": "dd7df92937543890",
+  "lang": "zh",
+  "annotator": "model-assisted (2026-11-06)",
+  "triples": [
+    {"subject": "中信证券", "predicate": "保荐", "object": "超聚变"},
+    {"subject": "超聚能", "predicate": "控股", "object": "超聚变"},
+    {"subject": "河南省国资委", "predicate": "控制", "object": "超聚能"},
+    {"subject": "中移资本", "predicate": "持股", "object": "超聚变"},
+    {"subject": "中移资本", "predicate": "属于", "object": "中国移动"},
+    {"subject": "昆仑工融", "predicate": "增资", "object": "超聚变"},
+    {"subject": "超聚变", "predicate": "上市", "object": "创业板"},
+    {"subject": "深交所上市审核委员会", "predicate": "审议", "object": "超聚变"},
+    {"subject": "超聚变", "predicate": "源自", "object": "华为x86服务器业务"}
+  ]
+}
