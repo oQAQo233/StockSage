@@ -1,0 +1,11 @@
+{
+  "article_id": "53709ad50dc2efb9",
+  "lang": "zh",
+  "annotator": "model-assisted (2026-11-06)",
+  "triples": [
+    {"subject": "中国太保", "predicate": "举牌", "object": "中国神华"},
+    {"subject": "太保寿险", "predicate": "增持", "object": "中国神华"},
+    {"subject": "太保资产", "predicate": "增持", "object": "中国神华"},
+    {"subject": "太保寿险", "predicate": "属于", "object": "中国太保"}
+  ]
+}

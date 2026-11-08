@@ -1,0 +1,29 @@
+{
+  "dataset_name": "fresh-energy-2026-jul-nov",
+  "start": "2026-07-01",
+  "end": "2026-11-06",
+  "price_basis": "unadjusted",
+  "discovery": "2026-11-08 重新网络检索，依据原页面的标题/正文与公司名核对关联；未使用旧样本链接或冻结语料。",
+  "stocks": [
+    {"symbol":"300750.SZ","company":"宁德时代新能源科技股份有限公司","industry":"动力电池","aliases":"宁德时代|CATL","exchange":"SZ"},
+    {"symbol":"002594.SZ","company":"比亚迪股份有限公司","industry":"新能源汽车","aliases":"比亚迪|BYD","exchange":"SZ"},
+    {"symbol":"300014.SZ","company":"惠州亿纬锂能股份有限公司","industry":"锂电池","aliases":"亿纬锂能|亿纬动力|EVE Energy","exchange":"SZ"}
+  ],
+  "articles": [
+    {"url":"https://www.cnfin.com/gs-lb/detail/20260724/4445954_1.html","symbols":["300750.SZ"],"source":"新华财经","format":"cnfin"},
+    {"url":"https://www.cnfin.com/dz-lb/detail/20260807/4452172_1.html","symbols":["300750.SZ"],"source":"新华财经（上海证券报）","format":"cnfin"},
+    {"url":"https://www.cnfin.com/gs-lb/detail/20260805/4451332_1.html","symbols":["300750.SZ"],"source":"新华财经","format":"cnfin"},
+    {"url":"https://www.cnfin.com/gs-lb/detail/20260909/4467480_1.html","symbols":["300750.SZ"],"source":"新华财经","format":"cnfin"},
+    {"url":"https://www.cnfin.com/dz-lb/detail/20260920/4472325_1.html","symbols":["300750.SZ"],"source":"新华财经（上海证券报）","format":"cnfin"},
+    {"url":"https://www.cnfin.com/gs-lb/detail/20261021/4483998_1.html","symbols":["300750.SZ","002594.SZ"],"source":"新华财经（上海证券报）","format":"cnfin"},
+    {"url":"https://finance.sina.com.cn/wm/2026-10-21/doc-inivyaau7964703.shtml","symbols":["300750.SZ"],"source":"新浪财经","format":"sina"},
+    {"url":"https://finance.sina.com.cn/tech/roll/2026-10-22/doc-iniwarrp5974953.shtml","symbols":["300750.SZ"],"source":"新浪科技","format":"sina"},
+    {"url":"https://www.cnfin.com/gs-lb/detail/20261103/4490067_1.html","symbols":["002594.SZ"],"source":"新华财经（证券日报）","format":"cnfin"},
+    {"url":"https://www.cnfin.com/gs-lb/detail/20261105/4491286_1.html","symbols":["002594.SZ"],"source":"新华财经（经济参考报）","format":"cnfin"},
+    {"url":"https://www.cnfin.com/gs-lb/detail/20260819/4456970_1.html","symbols":["300014.SZ"],"source":"新华财经","format":"cnfin"},
+    {"url":"https://www.cnfin.com/cmjj-lb/detail/20260910/4467872_1.html","symbols":["300014.SZ"],"source":"新华财经","format":"cnfin"},
+    {"url":"https://www.cnfin.com/yw-lb/detail/20261023/4485783_1.html","symbols":["300014.SZ"],"source":"新华财经","format":"cnfin"},
+    {"url":"https://finance.sina.com.cn/roll/2026-10-26/doc-iniwqhxp5291463.shtml","symbols":["300014.SZ"],"source":"新浪财经（预见能源）","format":"sina"},
+    {"url":"https://www.cnfin.com/kx/detail/20261105/4491630_1.html","symbols":["300014.SZ"],"source":"新华财经","format":"cnfin"}
+  ]
+}

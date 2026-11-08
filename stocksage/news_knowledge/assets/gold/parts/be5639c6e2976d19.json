@@ -1,0 +1,65 @@
+{
+  "article_id": "be5639c6e2976d19",
+  "triples": [
+    {
+      "subject": "Democrats",
+      "predicate": "took_control_of",
+      "object": "Congress"
+    },
+    {
+      "subject": "Democrats",
+      "predicate": "impeached",
+      "object": "Donald Trump"
+    },
+    {
+      "subject": "US Senate",
+      "predicate": "acquitted",
+      "object": "Donald Trump"
+    },
+    {
+      "subject": "Republicans",
+      "predicate": "cut",
+      "object": "Medicaid"
+    },
+    {
+      "subject": "Republicans",
+      "predicate": "cut",
+      "object": "Obamacare marketplace"
+    },
+    {
+      "subject": "Hakeem Jeffries",
+      "predicate": "leads",
+      "object": "House Democrats"
+    },
+    {
+      "subject": "Robert Garcia",
+      "predicate": "leads",
+      "object": "House oversight committee"
+    },
+    {
+      "subject": "Donald Trump",
+      "predicate": "posted_on",
+      "object": "Truth Social"
+    },
+    {
+      "subject": "US House",
+      "predicate": "passed",
+      "object": "resolution to halt hostilities with Iran"
+    },
+    {
+      "subject": "Donald Trump",
+      "predicate": "ignored",
+      "object": "resolution to halt hostilities with Iran"
+    },
+    {
+      "subject": "Casey Burgat",
+      "predicate": "is_professor_at",
+      "object": "George Washington University"
+    },
+    {
+      "subject": "Scott Anderson",
+      "predicate": "is_senior_fellow_at",
+      "object": "Brookings Institution"
+    }
+  ]
+}

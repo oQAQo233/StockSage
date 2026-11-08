@@ -1,0 +1,15 @@
+{
+  "article_id": "bc63de2966fddb2a",
+  "lang": "zh",
+  "annotator": "model-assisted (2026-11-06)",
+  "triples": [
+    {"subject": "侨源股份", "predicate": "签订", "object": "自贡市沿滩区人民政府"},
+    {"subject": "欧洲星源", "predicate": "签订", "object": "德国大众车厂旗下动力电池子公司"},
+    {"subject": "九江天赐", "predicate": "签订", "object": "亿纬锂能"},
+    {"subject": "联讯仪器", "predicate": "回购", "object": "公司股份"},
+    {"subject": "山东黄金", "predicate": "回购", "object": "公司股份"},
+    {"subject": "华正新材", "predicate": "回购", "object": "公司股份"},
+    {"subject": "金刚光伏", "predicate": "签订", "object": "算力云服务合同"},
+    {"subject": "杭电股份", "predicate": "回购", "object": "公司股份"}
+  ]
+}

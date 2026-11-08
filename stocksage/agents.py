@@ -3,6 +3,8 @@ from .data import generate_demo, load_dataset, timestamp
 from .forecast import evaluate
 from .fusion import FEATURE_NAMES, align_news, build_features
 from .graph import build_graph
+from .knowledge import extract_news, normalize_news, summarize
+from .news import collect_news
 
 
 class CollectionAgent:
@@ -27,8 +29,12 @@ class AnalysisAgent:
         observable = sorted(aligned_news, key=lambda item: timestamp(item["available_at"]), reverse=True)
         latest = prices[-1]
         last_features = features[-1]
+        triples = [t for item in observable for t in item.get("triples", [])]
         return dict(stock=stock, prices=prices, news=observable, pending_news=pending,
                     features=features, feature_names=FEATURE_NAMES,
+                    knowledge=dict(articles=len(observable), triples=triples,
+                                   backends=sorted({n.get("extraction", {}).get("backend", "none") for n in observable}),
+                                   no_relations=sum(n.get("extraction", {}).get("status") == "no_relations" for n in observable)),
                     graph=build_graph(stock, observable[:12]),
                     summary=dict(latest_close=latest["close"], latest_date=latest["date"],
                                  daily_return=latest["close"] / prices[-2]["close"] - 1,
@@ -36,6 +42,19 @@ class AnalysisAgent:
                                  news_count=len(observable), pending_count=len(pending),
                                  latest_sentiment=last_features["features"][4],
                                  latest_news_ids=last_features["evidence_ids"]))
+
+
+class KnowledgeAgent:
+    name = "新闻知识智能体"
+
+    def run(self, stocks, news, output_dir, backend="rule", source="dataset", limit=20,
+            days=7, time_mode="observed", query=None, snapshot=None):
+        collected, ingestion = collect_news(stocks, news, output_dir, source, limit, days, time_mode, query, snapshot)
+        normalized, duplicates = normalize_news(collected)
+        enriched = extract_news(normalized, backend)
+        summary = summarize(enriched, duplicates, backend)
+        summary.update(ingestion=ingestion, duplicate_records=duplicates)
+        return enriched, summary
 
 
 class ForecastAgent:

@@ -13,7 +13,8 @@
     <div class="side-caption">DATA FUSION LAB / 数据融合实验室</div>
     <nav aria-label="页面导航">
       <a href="#overview"><span>01</span> 融合概览</a>
-      <a href="#knowledge"><span>02</span> 新闻知识图谱</a>
+        <a href="#knowledge"><span>02</span> 新闻知识图谱</a>
+        <a href="/graph/interactive" target="_blank" rel="noopener">可拖拽图谱 · 新窗口 ↗</a>
       <a href="#forecast"><span>03</span> 行情预测实验</a>
       <a href="#evidence"><span>04</span> 新闻证据库</a>
       <a href="#agents"><span>05</span> 智能体协作</a>
@@ -26,16 +27,17 @@
     <section id="overview">
       <div class="section-head"><div><div class="eyebrow">INFORMATION INTO INSIGHT</div><h1>让新闻与行情，形成关联。</h1><p class="muted">从原始记录到证据图谱，探索多源信息融合的完整链路。</p></div><label class="stock-picker">研究标的<select id="stock-select" aria-label="选择股票"></select></label></div>
       <div class="notice" id="data-notice">正在读取数据集说明…</div>
+      <div id="dataset-provenance" class="dataset-provenance" aria-label="数据采集凭据"></div>
       <div class="metrics" id="metrics"></div>
       <div class="two-col">
         <article class="card"><div class="card-head"><div><div class="eyebrow">MARKET + NEWS</div><h2>价格走势与新闻落点</h2></div><span class="legend"><i></i>收盘价 <b>●</b> 新闻</span></div><svg id="price-chart" viewBox="0 0 780 290" role="img" aria-label="股票收盘价与新闻日期图"></svg><div class="footnote" id="chart-note"></div></article>
         <article class="card insight"><div class="eyebrow">EVIDENCE-BASED BRIEF</div><h2>研究摘要</h2><div class="brief-rule">规则生成 · 可追溯证据</div><p id="brief"></p><div class="evidence-label">当前收盘日的新闻证据</div><div id="brief-evidence"></div><div class="insight-footer">信息可用时点：Asia/Shanghai 15:00<br>盘后新闻归入下一个有行情的交易日。</div></article>
       </div>
     </section>
-    <section id="knowledge"><div class="section-title"><div><div class="eyebrow">CONNECTED EVIDENCE</div><h2>新闻知识图谱</h2></div><span class="muted">点击新闻节点，查看原始依据</span></div><article class="card"><div class="graph-key"><span>证券</span><span>公司 / 行业</span><span>新闻</span><span>事件</span><span>来源</span></div><svg id="graph" viewBox="0 0 1040 450" role="img" aria-label="公司、新闻、事件与来源之间的关系图"></svg><div id="graph-detail" class="detail">选择图谱中的新闻节点，可查看标题、可用时间与证据编号。</div><div class="footnote">展示最近最多 6 条已可用新闻；完整导出图谱含最近最多 12 条。提及与报道关系不代表价格因果。</div></article></section>
+    <section id="knowledge"><div class="section-title"><div><div class="eyebrow">CONNECTED EVIDENCE</div><h2>新闻知识图谱</h2></div><span class="muted">点击节点或抽取关系，查看依据</span></div><article class="card"><p id="knowledge-status" class="muted"></p><div class="graph-key"><span>证券</span><span>公司 / 行业</span><span>新闻</span><span>事件</span><span>来源</span><span>抽取实体</span></div><svg id="graph" viewBox="0 0 1120 450" role="img" aria-label="公司、新闻、事件、抽取关系与来源之间的知识图谱"></svg><div id="graph-detail" class="detail">选择图谱节点，可查看原文依据。</div><div class="footnote">图中展示最近最多 6 条已可用新闻及其关系；导出图谱含最近最多 12 条。表格列出所有已可用新闻的抽取关系。提及、报道和模型抽取均不代表因果。</div><div class="table-wrap"><table><thead><tr><th>主体</th><th>关系</th><th>对象</th><th>后端</th><th>证据</th></tr></thead><tbody id="knowledge-triples"></tbody></table></div></article></section>
     <section id="forecast"><div class="section-title"><div><div class="eyebrow">A TESTABLE HYPOTHESIS</div><h2>行情预测实验</h2></div><span class="pill">扩展窗口 · 时间顺序验证</span></div><div class="two-col"><article class="card"><div class="card-head"><h3>下一交易日收益率估计</h3><span id="forecast-asof" class="muted"></span></div><div id="prediction" class="prediction"></div><p id="prediction-note" class="muted"></p><h3>特征贡献分解</h3><svg id="contributions" viewBox="0 0 560 245" role="img" aria-label="标准化特征的线性模型贡献"></svg><div class="footnote">贡献 = 标准化特征 × 回归系数；与截距相加得到估计值，不代表因果效应。</div></article><article class="card"><h3>同一测试窗口下的模型对比</h3><p class="muted">比较零收益、纯行情和新闻融合，检验融合信息是否有增量。</p><div class="table-wrap"><table><thead><tr><th>模型</th><th>MAE</th><th>RMSE</th><th>方向准确率</th></tr></thead><tbody id="model-metrics"></tbody></table></div><div class="validation-box" id="validation-note"></div><div class="footnote">误差越低越好。方向准确率排除实际收益为零的样本；预测为零视为未命中方向。未评估交易收益。</div></article></div></section>
     <section id="evidence"><div class="section-title"><div><div class="eyebrow">TRACE EVERY CLAIM</div><h2>新闻证据库</h2></div><label class="search-label">筛选新闻<input id="news-search" type="search" placeholder="搜索标题、事件或证据编号"></label></div><article class="card"><div class="table-wrap"><table class="news-table"><thead><tr><th>新闻 / 证据编号</th><th>事件</th><th>情绪</th><th>可用时间</th><th>对齐交易日</th></tr></thead><tbody id="news-table"></tbody></table></div><div class="footnote" id="news-note"></div></article></section>
-    <section id="agents"><div class="section-title"><div><div class="eyebrow">FROM DATA TO REPORT</div><h2>智能体协作链路</h2></div><span class="muted">当前为确定性角色服务，未接入 LLM</span></div><div id="agent-cards" class="agent-grid"></div></section>
+    <section id="agents"><div class="section-title"><div><div class="eyebrow">FROM DATA TO REPORT</div><h2>智能体协作链路</h2></div><span class="muted">角色服务编排 · 知识抽取后端可切换</span></div><div id="agent-cards" class="agent-grid"></div></section>
     <footer>StockSage / 本科数据融合课程项目 <span>来源可查 · 时间可对齐 · 结果可复现</span></footer>
   </main>
 </body>

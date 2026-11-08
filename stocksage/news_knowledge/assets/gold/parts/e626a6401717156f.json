@@ -1,0 +1,70 @@
+{
+  "article_id": "e626a6401717156f",
+  "triples": [
+    {
+      "subject": "Jennifer Balcarras",
+      "predicate": "died_in",
+      "object": "British Columbia"
+    },
+    {
+      "subject": "Selah Reed",
+      "predicate": "died_in",
+      "object": "British Columbia"
+    },
+    {
+      "subject": "Jennifer Balcarras",
+      "predicate": "mother_of",
+      "object": "Selah Reed"
+    },
+    {
+      "subject": "Jennifer Balcarras",
+      "predicate": "moved_to",
+      "object": "Bella Coola"
+    },
+    {
+      "subject": "British Columbia",
+      "predicate": "banned",
+      "object": "hunting grizzly bears for sport"
+    },
+    {
+      "subject": "Royal Canadian Mounted Police",
+      "predicate": "cooperated_with",
+      "object": "BC Conservation Officer Service"
+    },
+    {
+      "subject": "Jeff Tyre",
+      "predicate": "worked_for",
+      "object": "BC Conservation Officer Service"
+    },
+    {
+      "subject": "Jesse Zeman",
+      "predicate": "leads",
+      "object": "BC Wildlife Federation"
+    },
+    {
+      "subject": "British Columbia",
+      "predicate": "located_in",
+      "object": "Canada"
+    },
+    {
+      "subject": "Josh Balcarras",
+      "predicate": "brother_of",
+      "object": "Jennifer Balcarras"
+    },
+    {
+      "subject": "Jennifer Balcarras",
+      "predicate": "remains_found_in",
+      "object": "Bella Coola"
+    },
+    {
+      "subject": "Selah Reed",
+      "predicate": "remains_found_in",
+      "object": "Bella Coola"
+    },
+    {
+      "subject": "Ministry of Environment, Lands and Parks",
+      "predicate": "classified_as_vulnerable",
+      "object": "grizzly bears"
+    }
+  ]
+}

@@ -15,6 +15,8 @@ NEWS_FIELDS = ("id", "title", "body", "source", "url", "published_at", "availabl
 
 
 def timestamp(value):
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
     result = datetime.fromisoformat(value)
     if result.utcoffset() is None:
         raise ValueError(f"时间必须含时区：{value}")

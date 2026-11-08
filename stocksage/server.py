@@ -2,6 +2,7 @@
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from urllib.parse import parse_qs, urlsplit
 
 WEB = Path(__file__).parent / "web"
@@ -15,7 +16,7 @@ def make_handler(report):
         def log_message(self, fmt, *args):
             pass
 
-        def send(self, status, body, content_type="application/json; charset=utf-8"):
+        def send(self, status, body, content_type="application/json; charset=utf-8", inline_graph=False):
             if not isinstance(body, bytes):
                 body = json.dumps(body, ensure_ascii=False, allow_nan=False).encode("utf-8")
             self.send_response(status)
@@ -23,24 +24,41 @@ def make_handler(report):
             self.send_header("Content-Length", str(len(body)))
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Cache-Control", "no-store")
-            self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+            policy = "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+            if inline_graph:
+                policy = "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+            self.send_header("Content-Security-Policy", policy)
             self.end_headers()
             self.wfile.write(body)
 
         def do_GET(self):
             url = urlsplit(self.path)
+            if url.path == "/graph/interactive":
+                from . import visualization
+                symbol = parse_qs(url.query).get("symbol", [None])[0]
+                if symbol and symbol not in report["reports"]:
+                    return self.send(404, dict(error="未知股票代码"))
+                try:
+                    visualizer = visualization
+                    graph = visualizer.select_graph(visualizer.report_graph(report, symbol),limit=1000)
+                    with TemporaryDirectory() as folder:
+                        path = visualizer.render_graph(graph,Path(folder)/"graph.html")
+                        body = path.read_bytes()
+                except ImportError:
+                    return self.send(503,dict(error="交互图谱需要 PyVis，请运行 python -m pip install pyvis"))
+                return self.send(200,body,"text/html; charset=utf-8",inline_graph=True)
             if url.path in ASSETS:
                 filename, mime = ASSETS[url.path]
                 return self.send(200, (WEB / filename).read_bytes(), mime)
             if url.path == "/api/health":
                 return self.send(200, dict(status="ok", synthetic=report["dataset"]["synthetic"]))
             if url.path == "/api/stocks":
-                return self.send(200, dict(stocks=report["stocks"], dataset=report["dataset"], quality=report["quality"], agents=report["agents"], limitations=report["limitations"]))
-            if url.path == "/api/dashboard":
+                return self.send(200, dict(stocks=report["stocks"], dataset=report["dataset"], quality=report["quality"], knowledge=report.get("knowledge", {}), agents=report["agents"], limitations=report["limitations"]))
+            if url.path in {"/api/dashboard", "/api/graph"}:
                 symbol = parse_qs(url.query).get("symbol", [report["stocks"][0]["symbol"]])[0]
                 if symbol not in report["reports"]:
                     return self.send(404, dict(error="未知股票代码"))
-                return self.send(200, report["reports"][symbol])
+                return self.send(200, report["reports"][symbol]["graph"] if url.path == "/api/graph" else report["reports"][symbol])
             return self.send(404, dict(error="资源不存在"))
     return Handler
 

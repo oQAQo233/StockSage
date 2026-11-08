@@ -72,36 +72,44 @@ function renderPrice(data) {
 
 function renderGraph(data) {
   const svg = $("graph"); svg.replaceChildren();
-  $("graph-detail").textContent = "选择图谱中的新闻节点，可查看标题、可用时间与证据编号。";
-  const news = data.news.slice(0, 6), positions = new Map();
-  positions.set("company", {x:280, y:238, w:170, label:short(data.stock.company, 14), kind:"company"});
-  positions.set("stock", {x:85, y:132, w:135, label:data.stock.symbol, kind:"stock"});
-  positions.set("industry", {x:85, y:340, w:135, label:data.stock.industry, kind:"industry"});
-  positions.set("source", {x:280, y:40, w:170, label:"新闻来源", kind:"source"});
-  function link(from, to, label = "") {
-    const a = positions.get(from), b = positions.get(to);
-    svg.append(element("path", {d:`M${a.x},${a.y} Q${(a.x+b.x)/2},${a.y} ${b.x},${b.y}`, class:"graph-edge"}));
-    if (label) svg.append(element("text", {x:(a.x+b.x)/2, y:(a.y+b.y)/2-8, class:"edge-label"}, label));
+  const selected = new Set(data.news.slice(0, 6).map(n => n.id));
+  const edges = data.graph.edges.filter(e => !e.evidence_id || selected.has(e.evidence_id));
+  const used = new Set(edges.flatMap(e => [e.source,e.target]));
+  const nodes = data.graph.nodes.filter(n => used.has(n.id));
+  const byId = new Map(data.news.map(n => [n.id,n]));
+  const columns = {stock:85,industry:85,company:280,source:280,news:565,event:835,entity:1030};
+  const counts = {}, positions = new Map();
+  for (const n of nodes) {
+    const index=counts[n.kind]||0;counts[n.kind]=index+1;
+    const y=n.kind==="stock"?135:n.kind==="industry"?335:n.kind==="company"?235:n.kind==="source"?45+index*55:75+index*64;
+    positions.set(n.id,{...n,x:columns[n.kind]||1030,y,w:n.kind==="news"?270:n.kind==="entity"?150:160});
   }
-  link("company", "stock", "发行"); link("company", "industry", "属于");
-  news.forEach((item, index) => {
-    const yy = 65 + index*64;
-    positions.set(item.id, {x:607, y:yy, w:265, label:short(item.title, 19), kind:"news", article:item});
-    positions.set(`event-${item.id}`, {x:936, y:yy, w:145, label:item.event_type || "未分类", kind:"event"});
-    link("source", item.id); link(item.id, "company"); link(item.id, `event-${item.id}`, "报道");
-  });
-  for (const [id, p] of positions) {
-    const group = element("g", p.article ? {class:"news-node", tabindex:"0", role:"button", "aria-label":p.article.title} : {});
-    group.append(element("rect", {x:p.x-p.w/2, y:p.y-19, width:p.w, height:38, rx:7, class:`node-${p.kind}`}), element("text", {x:p.x, y:p.y, class:"node-label"}, p.label));
-    if (p.article) {
-      group.append(element("title", {}, `${p.article.id}: ${p.article.title}`));
-      const select = () => { const n=p.article; $("graph-detail").textContent = `${n.id} ｜ ${n.title} ｜ 来源：${n.source} ｜ 可用：${n.available_at} ｜ 对齐：${n.effective_date} ｜ 事件依据：${n.event_evidence || n.body || "仅保留标题"}`; };
-      group.addEventListener("click", select);
-      group.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") {e.preventDefault();select();} });
-    }
+  const height=Math.max(450,...[...positions.values()].map(n=>n.y+50));
+  svg.setAttribute("viewBox",`0 0 1120 ${height}`);
+  const showNews=id=>{const n=byId.get(id);if(n)$("graph-detail").textContent=`${n.id} ｜ ${n.title} ｜ 来源：${n.source} ｜ 可用：${n.available_at} ｜ 对齐：${n.effective_date} ｜ ${short(n.body||n.event_evidence||"仅保留标题",500)}`;};
+  $("graph-detail").textContent="选择图谱新闻节点或关系表中的证据，可查看来源与原文。";
+  for(const edge of edges){
+    const a=positions.get(edge.source),b=positions.get(edge.target);
+    const sameColumn=a.x===b.x;
+    const path=element("path",{d:`M${a.x},${a.y} Q${sameColumn?a.x-100:(a.x+b.x)/2},${sameColumn?(a.y+b.y)/2:a.y} ${b.x},${b.y}`,class:edge.triple_id?"graph-edge extracted-edge":"graph-edge"});
+    path.append(element("title",{},`${edge.relation}${edge.evidence_id?" · "+edge.evidence_id:""}`));svg.append(path);
+    if(edge.triple_id||!edge.evidence_id)svg.append(element("text",{x:(a.x+b.x)/2-25,y:(a.y+b.y)/2-7,class:"edge-label"},edge.relation));
+  }
+  for(const p of positions.values()){
+    const clickable=Boolean(p.evidence_id);
+    const group=element("g",clickable?{class:"news-node",tabindex:"0",role:"button","aria-label":p.label}:{});
+    group.append(element("rect",{x:p.x-p.w/2,y:p.y-19,width:p.w,height:38,rx:7,class:`node-${p.kind}`}),element("text",{x:p.x,y:p.y,class:"node-label"},short(p.label,p.kind==="news"?19:11)),element("title",{},p.label));
+    if(clickable){group.addEventListener("click",()=>showNews(p.evidence_id));group.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();showNews(p.evidence_id);}});}
     svg.append(group);
   }
-  if (!news.length) svg.append(element("text", {x:580,y:220}, "暂无已可用新闻，展示静态公司关系。"));
+  const knowledge=data.knowledge||{triples:[],backends:[],no_relations:0};
+  $("knowledge-status").textContent=`newskg / ${knowledge.backends.join(", ")||"暂无可用新闻"} · 当前股票时点可用 ${data.news.length} 篇，抽取关系 ${knowledge.triples.length} 条，${knowledge.no_relations} 篇未抽到关系。未抽到关系不表示新闻没有事实。`;
+  $("knowledge-triples").replaceChildren(...knowledge.triples.map(t=>{
+    const row=htmlElement("tr");for(const text of [t.subject,t.predicate,t.object,t.backend])row.append(htmlElement("td","",text));
+    const cell=htmlElement("td"),button=htmlElement("button","evidence-button",t.evidence_id);
+    button.addEventListener("click",()=>{$("graph-detail").textContent=`${t.subject} — ${t.predicate} → ${t.object} ｜ ${t.evidence_id} ｜ ${t.evidence_text||"仅能在全文定位两端实体，未定位到同一句"} ｜ 后端分数为启发值，非真实概率。`;});cell.append(button);row.append(cell);return row;
+  }));
+  if(!knowledge.triples.length){const row=htmlElement("tr"),cell=htmlElement("td","muted","该股票当前可用新闻未抽取出关系；可查看新闻证据，或配置 llm/kggen 后端重新运行。");cell.colSpan=5;row.append(cell);$("knowledge-triples").append(row);}
 }
 
 function renderForecast(data) {
@@ -159,8 +167,16 @@ async function init() {
   try {
     const info=await getJSON("/api/stocks");
     datasetInfo=info.dataset;
+    const dataset=info.dataset;
+    const acquired=dataset.acquisition_completed_at || info.stocks.map(s=>s.fetched_at||"").sort().at(-1);
+    const provenance=[`数据集：${dataset.dataset_id||"合成演示 / 未声明标识"}`,
+      `行情范围：${dataset.coverage?dataset.coverage.start+" 至 "+dataset.coverage.end:"以图表日期为准"}`,
+      `采集完成：${acquired?new Date(acquired).toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:false})+"（北京时间）":"未提供"}`,
+      `${info.stocks.length} 只股票 · ${info.quality.price_rows} 条行情 · ${info.quality.news_rows} 篇新闻`];
+    $("dataset-provenance").replaceChildren(...provenance.map(text=>htmlElement("span","",text)));
     $("data-notice").textContent=info.dataset.synthetic ? "教学演示：当前使用虚构股票和合成数据，预测仅用于方法验证。" : info.dataset.synthetic === false ? "真实来源快照：" + (info.quality?.warnings || info.limitations).join(" ") : "导入数据的真实性未确认；预测结果仅用于方法验证。";
     $("dataset-label").textContent=info.dataset.label + (info.dataset.news_time_mode === "historical_assumption" ? " · 时间为回填假设，非历史实时接收" : "");
+    if(info.knowledge?.ingestion?.source!=="dataset")$("data-notice").textContent+=` newskg 已采集 ${info.knowledge.articles} 篇，其中 ${info.knowledge.unlinked_articles} 篇未关联目标证券；股票时点可见关系 ${info.knowledge.visible_triples} 条。`;
     $("stock-select").replaceChildren(...info.stocks.map(stock=>{const option=htmlElement("option","",`${stock.symbol} · ${stock.company}`);option.value=stock.symbol;return option;}));
     $("agent-cards").replaceChildren(...info.agents.map((agent,index)=>{const card=htmlElement("article","agent-card");const num=htmlElement("div","agent-number",`0${index+1} / AGENT`);num.append(htmlElement("span","done",agent.status));card.append(num,htmlElement("h3","",agent.name),htmlElement("p","",agent.detail));return card;}));
     $("stock-select").addEventListener("change",e=>loadSymbol(e.target.value));

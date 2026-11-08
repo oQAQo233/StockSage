@@ -1,0 +1,24 @@
+{
+  "article_id": "aa05dffe5497eb86",
+  "lang": "zh",
+  "annotator": "model-assisted (2026-11-06)",
+  "triples": [
+    {"subject": "侨源股份", "predicate": "签订", "object": "自贡市沿滩区人民政府"},
+    {"subject": "侨源股份", "predicate": "投资", "object": "电子特气及配套材料一体化项目"},
+    {"subject": "欧洲星源", "predicate": "签订", "object": "德国大众车厂旗下动力电池子公司"},
+    {"subject": "欧洲星源", "predicate": "供应", "object": "锂离子电池隔膜材料"},
+    {"subject": "诺禾致源", "predicate": "起诉", "object": "美国国防部"},
+    {"subject": "九江天赐", "predicate": "签订", "object": "亿纬锂能"},
+    {"subject": "九江天赐", "predicate": "供应", "object": "电解液"},
+    {"subject": "宁波市中凯信创业投资股份有限公司", "predicate": "质押", "object": "万华化学"},
+    {"subject": "天目湖", "predicate": "签订", "object": "溧阳市天目湖镇人民政府"},
+    {"subject": "红四方", "predicate": "终止", "object": "化工新材料及新型肥料产业园项目"},
+    {"subject": "高新兴", "predicate": "终止", "object": "北交所上市辅导备案"},
+    {"subject": "联讯仪器", "predicate": "回购", "object": "公司股份"},
+    {"subject": "山东黄金", "predicate": "回购", "object": "公司股份"},
+    {"subject": "环海湾文旅", "predicate": "增持", "object": "凯撒旅业"},
+    {"subject": "金刚光伏", "predicate": "签订", "object": "算力云服务合同"},
+    {"subject": "宏盛华源", "predicate": "中标", "object": "国家电网项目"},
+    {"subject": "大禹节水", "predicate": "中标", "object": "安庆市下浒山水库灌区工程"}
+  ]
+}

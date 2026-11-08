@@ -1,0 +1,21 @@
+article_id,subject,predicate,object
+592a538c6c9ae933,european central bank,raised,interest rates
+592a538c6c9ae933,european central bank,located_in,frankfurt
+592a538c6c9ae933,christine lagarde,leads,european central bank
+3c3245af37799df0,department of transportation,located_in,washington
+3c3245af37799df0,northwind airlines,located_in,chicago
+3c3245af37799df0,sunbelt air,located_in,atlanta
+3c3245af37799df0,sunbelt air,signed_with,pilots union
+b50930d65199364b,northwind airlines,acquired,sunbelt air
+b50930d65199364b,maria chen,leads,northwind airlines
+b50930d65199364b,northwind airlines,located_in,chicago
+b50930d65199364b,sunbelt air,located_in,atlanta
+244147b34d523c03,taiwan semiconductor manufacturing,invested_in,arizona
+244147b34d523c03,taiwan semiconductor manufacturing,located_in,hsinchu
+ac75946a0078af04,united states,sanctioned,chip exports
+ac75946a0078af04,asml holding,located_in,veldhoven
+edea4653fe385eb8,opec,cut,oil production
+edea4653fe385eb8,opec,located_in,vienna
+edea4653fe385eb8,saudi arabia,cut,output
+ebd91f43e4463f89,port of los angeles,signed_with,pacific maritime association
+ebd91f43e4463f89,pacific maritime association,located_in,san francisco

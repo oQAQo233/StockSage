@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ecb-1",
+    "title": "ECB raises rates again as inflation stays above target",
+    "url": "https://example.org/fixtures/ecb-rates",
+    "published_at": "2026-11-04T09:30:00Z",
+    "lang": "en",
+    "file": "ecb-1.html"
+  },
+  {
+    "id": "ecb-2",
+    "title": "ECB lifts rates a quarter point, third hike this year",
+    "url": "https://example.net/fixtures/ecb-wire",
+    "published_at": "2026-11-04T10:05:00Z",
+    "lang": "en",
+    "file": "ecb-2.html"
+  },
+  {
+    "id": "airline-1",
+    "title": "Northwind Airlines to buy Sunbelt Air in $2.4 billion deal",
+    "url": "https://example.org/fixtures/northwind-sunbelt",
+    "published_at": "2026-11-03T08:00:00Z",
+    "lang": "en",
+    "file": "airline-1.html"
+  },
+  {
+    "id": "airline-2",
+    "title": "Washington to review Northwind-Sunbelt merger",
+    "url": "https://example.net/fixtures/merger-review",
+    "published_at": "2026-11-03T15:20:00Z",
+    "lang": "en",
+    "file": "airline-2.html"
+  },
+  {
+    "id": "chips-1",
+    "title": "U.S. bans chip equipment exports to Chinese firms",
+    "url": "https://example.org/fixtures/chip-export-rule",
+    "published_at": "2026-11-02T11:45:00Z",
+    "lang": "en",
+    "file": "chips-1.html"
+  },
+  {
+    "id": "chips-2",
+    "title": "TSMC expands Arizona plants as demand for advanced chips grows",
+    "url": "https://example.org/fixtures/tsmc-arizona",
+    "published_at": "2026-11-02T18:10:00Z",
+    "lang": "en",
+    "file": "chips-2.html"
+  },
+  {
+    "id": "opec-1",
+    "title": "OPEC cuts oil output by 1.2 million barrels a day",
+    "url": "https://example.net/fixtures/opec-cut",
+    "published_at": "2026-11-01T07:00:00Z",
+    "lang": "en",
+    "file": "opec-1.html"
+  },
+  {
+    "id": "port-1",
+    "title": "Port of Los Angeles strike ends with new contract",
+    "url": "https://example.org/fixtures/port-strike",
+    "published_at": "2026-10-31T20:30:00Z",
+    "lang": "en",
+    "file": "port-1.html"
+  }
+]

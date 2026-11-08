@@ -19,12 +19,15 @@ def persist(path, stocks, prices, news, report, calendar=None):
             CREATE TABLE IF NOT EXISTS dataset_metadata (id INTEGER PRIMARY KEY CHECK(id = 1), metadata_json TEXT);
             CREATE TABLE IF NOT EXISTS calendar_sessions (exchange TEXT, date TEXT, source TEXT,
                 source_url TEXT, fetched_at TEXT, raw_ref TEXT, PRIMARY KEY(exchange, date));
+            CREATE TABLE IF NOT EXISTS knowledge_triples (id TEXT PRIMARY KEY,
+                news_id TEXT REFERENCES news(id), subject TEXT, predicate TEXT, object TEXT,
+                backend TEXT, available_at TEXT, evidence_text TEXT, attributes_json TEXT);
         """)
         for table in ("stocks", "prices", "news"):
             columns = {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
             if "attributes_json" not in columns:
                 connection.execute(f"ALTER TABLE {table} ADD COLUMN attributes_json TEXT")
-        for table in ("news_symbols", "prices", "news", "stocks", "snapshots", "dataset_metadata", "calendar_sessions"):
+        for table in ("knowledge_triples", "news_symbols", "prices", "news", "stocks", "snapshots", "dataset_metadata", "calendar_sessions"):
             connection.execute(f"DELETE FROM {table}")
         connection.executemany("INSERT INTO stocks (symbol,company,industry,aliases) VALUES (:symbol,:company,:industry,:aliases)", stocks)
         connection.executemany("INSERT INTO prices (symbol,date,open,high,low,close,volume) VALUES (:symbol,:date,:open,:high,:low,:close,:volume)", prices)
@@ -37,4 +40,8 @@ def persist(path, stocks, prices, news, report, calendar=None):
         connection.execute("INSERT INTO dataset_metadata VALUES (1,?)", (encode(report["dataset"]),))
         connection.executemany("INSERT INTO calendar_sessions VALUES (:exchange,:date,:source,:source_url,:fetched_at,:raw_ref)", calendar or [])
         connection.executemany("INSERT INTO news_symbols VALUES (?,?)", [(item["id"], symbol) for item in news for symbol in item["symbols"]])
+        triples = [triple for item in news for triple in item.get("triples", [])]
+        connection.executemany("INSERT INTO knowledge_triples VALUES (?,?,?,?,?,?,?,?,?)",
+                               [(t["id"], t["evidence_id"], t["subject"], t["predicate"], t["object"],
+                                 t["backend"], t["available_at"], t["evidence_text"], encode(t)) for t in triples])
         connection.execute("INSERT INTO snapshots VALUES (1,?)", (json.dumps(report, ensure_ascii=False, allow_nan=False),))

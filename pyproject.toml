@@ -1,9 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "stocksage"
 version = "0.1.0"
 description = "新闻与股票多维度融合课程项目：可解释、可复现的离线演示"
 requires-python = ">=3.10"
 dependencies = []
+
+[project.optional-dependencies]
+news = ["requests>=2.31", "trafilatura>=2.0", "markitdown>=0.1.0", "feedparser>=6.0", "python-dateutil>=2.8"]
+visualization = ["pyvis>=0.3.2"]
+kggen = ["kg-gen"]
+
+[project.scripts]
+stocksage-graph = "stocksage.visualization:main"
+
+[tool.setuptools.packages.find]
+include = ["stocksage*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+stocksage = ["web/*.html", "web/*.css", "web/*.js"]
+"stocksage.news_knowledge" = ["assets/md/*.md", "assets/fixtures/*", "assets/gold/*", "assets/corpus/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

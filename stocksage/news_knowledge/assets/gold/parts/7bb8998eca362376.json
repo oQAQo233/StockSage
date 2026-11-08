@@ -1,0 +1,60 @@
+{
+  "article_id": "7bb8998eca362376",
+  "triples": [
+    {
+      "subject": "Vladimir Putin",
+      "predicate": "invaded",
+      "object": "Ukraine"
+    },
+    {
+      "subject": "Russia",
+      "predicate": "attacked",
+      "object": "Kamyshuvakha"
+    },
+    {
+      "subject": "Kamyshuvakha",
+      "predicate": "located_in",
+      "object": "Zaporizhzhia"
+    },
+    {
+      "subject": "Kamyshuvakha",
+      "predicate": "located_in",
+      "object": "Ukraine"
+    },
+    {
+      "subject": "Zaporizhzhia",
+      "predicate": "located_in",
+      "object": "Ukraine"
+    },
+    {
+      "subject": "Volodymyr Zelensky",
+      "predicate": "visited",
+      "object": "Spain"
+    },
+    {
+      "subject": "Volodymyr Zelensky",
+      "predicate": "met_with",
+      "object": "Steve Witkoff"
+    },
+    {
+      "subject": "Volodymyr Zelensky",
+      "predicate": "met_with",
+      "object": "Jared Kushner"
+    },
+    {
+      "subject": "Volodymyr Zelensky",
+      "predicate": "accused",
+      "object": "Russia"
+    },
+    {
+      "subject": "Steve Witkoff",
+      "predicate": "served_as_envoy_for",
+      "object": "Donald Trump"
+    },
+    {
+      "subject": "Jared Kushner",
+      "predicate": "served_as_envoy_for",
+      "object": "Donald Trump"
+    }
+  ]
+}

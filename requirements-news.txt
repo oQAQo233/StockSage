@@ -1,0 +1,8 @@
+# 联网新闻与正文转换的可选依赖；默认 CSV + rule 模式仍只需标准库。
+requests>=2.31
+trafilatura>=2.0
+markitdown>=0.1.0
+feedparser>=6.0
+networkx>=3.1
+pyvis>=0.3.2
+python-dateutil>=2.8
