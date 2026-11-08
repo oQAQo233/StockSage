@@ -2,6 +2,7 @@
 const $ = id => document.getElementById(id);
 const ns = "http://www.w3.org/2000/svg";
 let current = null;
+let datasetInfo = {};
 let requestNumber = 0;
 const pct = value => value === null ? "—" : `${(value * 100).toFixed(2)}%`;
 const signed = value => `${value > 0 ? "+" : ""}${pct(value)}`;
@@ -29,7 +30,9 @@ function showError(error) { $("error").hidden = false; $("error").textContent = 
 
 function renderMetrics(data) {
   const s = data.summary;
-  const entries = [["最新收盘价", s.latest_close.toFixed(2), s.latest_date, ""],
+  const basis = data.prices.at(-1).price_basis;
+  const priceLabel = basis === "qfq_snapshot" ? "前复权快照收盘价 · CNY" : basis === "hfq_snapshot" ? "后复权快照收盘价 · CNY" : "最新收盘价";
+  const entries = [[priceLabel, s.latest_close.toFixed(2), s.latest_date, ""],
     ["当日涨跌幅", signed(s.daily_return), "相对上一有行情交易日", directionClass(s.daily_return)],
     ["区间累计变化", signed(s.period_return), `${data.prices.length} 个交易日`, directionClass(s.period_return)],
     ["已对齐新闻", String(s.news_count), `${s.pending_count} 条尚未到收盘可用时点`, ""]];
@@ -63,7 +66,8 @@ function renderPrice(data) {
     }
   });
   for (const i of [0, Math.floor(prices.length/3), Math.floor(prices.length*2/3), prices.length-1]) svg.append(element("text", {x:x(i), y:top+height+27, "text-anchor":"middle"}, prices[i].date.slice(5)));
-  $("chart-note").textContent = `${prices[0].date} — ${prices.at(-1).date} · 金色点表示该收盘时点已可获得的新闻；关联不代表因果。`;
+  const timeNote = datasetInfo.news_time_mode === "historical_assumption" ? "按历史回填假设进入该收盘桶的新闻" : "按输入可用时间进入该收盘桶的新闻";
+  $("chart-note").textContent = `${prices[0].date} — ${prices.at(-1).date} · 金色点表示${timeNote}；关联不代表因果。`;
 }
 
 function renderGraph(data) {
@@ -91,7 +95,7 @@ function renderGraph(data) {
     group.append(element("rect", {x:p.x-p.w/2, y:p.y-19, width:p.w, height:38, rx:7, class:`node-${p.kind}`}), element("text", {x:p.x, y:p.y, class:"node-label"}, p.label));
     if (p.article) {
       group.append(element("title", {}, `${p.article.id}: ${p.article.title}`));
-      const select = () => { const n=p.article; $("graph-detail").textContent = `${n.id} ｜ ${n.title} ｜ 来源：${n.source} ｜ 可用：${n.available_at} ｜ 对齐：${n.effective_date} ｜ ${n.body}`; };
+      const select = () => { const n=p.article; $("graph-detail").textContent = `${n.id} ｜ ${n.title} ｜ 来源：${n.source} ｜ 可用：${n.available_at} ｜ 对齐：${n.effective_date} ｜ 事件依据：${n.event_evidence || n.body || "仅保留标题"}`; };
       group.addEventListener("click", select);
       group.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") {e.preventDefault();select();} });
     }
@@ -105,7 +109,7 @@ function renderForecast(data) {
   $("forecast-asof").textContent = `基于 ${f.as_of} 收盘信息`;
   $("prediction").textContent = signed(f.next_return);
   $("prediction").className = `prediction ${directionClass(f.next_return)}`;
-  $("prediction-note").textContent = `历史误差尺度 RMSE：${pct(f.residual_scale)}（非置信区间）。${data.stock.symbol.startsWith("DEMO") ? "合成数据不代表真实预测能力。" : "历史结果不保证未来表现。"}`;
+  $("prediction-note").textContent = `历史误差尺度 RMSE：${pct(f.residual_scale)}（非置信区间）。${datasetInfo.synthetic ? "合成数据不代表真实预测能力。" : datasetInfo.news_completeness === "curated_incomplete" ? "本小样本仅验证管线，不能据此判断预测有效性。" : "历史结果不保证未来表现。"}`;
   const names = {zero:"零收益基线", price_only:"纯行情 · 岭回归", fused:"新闻融合 · 岭回归"};
   $("model-metrics").replaceChildren(...Object.entries(f.metrics).map(([name,m]) => {
     const row=htmlElement("tr", name === "fused" ? "fused-row" : "");
@@ -130,6 +134,9 @@ function renderNews() {
   $("news-table").replaceChildren(...items.map(n => {
     const row=htmlElement("tr");const title=htmlElement("td");
     title.append(htmlElement("div","news-title",n.title),htmlElement("div","news-source",`${n.id} · ${n.source}`));
+    if (/^https?:\/\//i.test(n.url)) {
+      const link=htmlElement("a","news-source","查看来源");link.href=n.url;link.target="_blank";link.rel="noopener noreferrer";title.append(link);
+    }
     const score=htmlElement("td");score.append(htmlElement("span",`sentiment ${directionClass(n.sentiment)}`,`${n.sentiment>0?"正面":n.sentiment<0?"负面":"中性"} ${n.sentiment.toFixed(2)}`));
     row.append(title,htmlElement("td","",n.event_type||"未分类"),score,htmlElement("td","",n.available_at.replace("T"," ").slice(0,16)),htmlElement("td","",n.effective_date));
     return row;
@@ -151,7 +158,9 @@ async function loadSymbol(symbol) {
 async function init() {
   try {
     const info=await getJSON("/api/stocks");
-    $("dataset-label").textContent=info.dataset.label;
+    datasetInfo=info.dataset;
+    $("data-notice").textContent=info.dataset.synthetic ? "教学演示：当前使用虚构股票和合成数据，预测仅用于方法验证。" : info.dataset.synthetic === false ? "真实来源快照：" + (info.quality?.warnings || info.limitations).join(" ") : "导入数据的真实性未确认；预测结果仅用于方法验证。";
+    $("dataset-label").textContent=info.dataset.label + (info.dataset.news_time_mode === "historical_assumption" ? " · 时间为回填假设，非历史实时接收" : "");
     $("stock-select").replaceChildren(...info.stocks.map(stock=>{const option=htmlElement("option","",`${stock.symbol} · ${stock.company}`);option.value=stock.symbol;return option;}));
     $("agent-cards").replaceChildren(...info.agents.map((agent,index)=>{const card=htmlElement("article","agent-card");const num=htmlElement("div","agent-number",`0${index+1} / AGENT`);num.append(htmlElement("span","done",agent.status));card.append(num,htmlElement("h3","",agent.name),htmlElement("p","",agent.detail));return card;}));
     $("stock-select").addEventListener("change",e=>loadSymbol(e.target.value));

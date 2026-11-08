@@ -52,7 +52,9 @@ class ReportAgent:
         summary = analysis["summary"]
         direction = "上涨" if forecast["next_return"] > 0 else "下跌" if forecast["next_return"] < 0 else "持平"
         evidence = summary["latest_news_ids"]
-        return dict(text=(f"截至 {summary['latest_date']} 收盘，{analysis['stock']['company']}收盘价为 "
+        basis = analysis["prices"][-1].get("price_basis", "")
+        price_label = {"qfq_snapshot": "前复权快照收盘价", "hfq_snapshot": "后复权快照收盘价"}.get(basis, "收盘价")
+        return dict(text=(f"截至 {summary['latest_date']} 收盘，{analysis['stock']['company']}{price_label}为 "
                           f"{summary['latest_close']:.2f}，当日收益率 {summary['daily_return']:+.2%}。"
                           f"当日对齐新闻 {len(evidence)} 条。岭回归预计下一交易日收益率 "
                           f"{forecast['next_return']:+.2%}（{direction}方向），仅用于课程方法演示。"),

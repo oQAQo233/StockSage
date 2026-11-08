@@ -35,7 +35,7 @@ def make_handler(report):
             if url.path == "/api/health":
                 return self.send(200, dict(status="ok", synthetic=report["dataset"]["synthetic"]))
             if url.path == "/api/stocks":
-                return self.send(200, dict(stocks=report["stocks"], dataset=report["dataset"], agents=report["agents"], limitations=report["limitations"]))
+                return self.send(200, dict(stocks=report["stocks"], dataset=report["dataset"], quality=report["quality"], agents=report["agents"], limitations=report["limitations"]))
             if url.path == "/api/dashboard":
                 symbol = parse_qs(url.query).get("symbol", [report["stocks"][0]["symbol"]])[0]
                 if symbol not in report["reports"]:

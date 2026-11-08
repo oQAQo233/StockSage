@@ -6,6 +6,8 @@ import random
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
+from .contracts import publication_bound, validate_contract
+
 SHANGHAI = timezone(timedelta(hours=8))
 STOCK_FIELDS = ("symbol", "company", "industry", "aliases")
 PRICE_FIELDS = ("symbol", "date", "open", "high", "low", "close", "volume")
@@ -92,6 +94,13 @@ def generate_demo(directory):
 
 
 def load_dataset(directory):
+    directory = Path(directory)
+    meta_path = directory / "metadata.json"
+    metadata = json.loads(meta_path.read_text(encoding="utf-8-sig")) if meta_path.exists() else {}
+    if not isinstance(metadata, dict):
+        raise ValueError("metadata.json 必须是对象")
+    if metadata.get("synthetic") is False and "contract_version" not in metadata:
+        raise ValueError("真实数据必须声明 contract_version 并提供 v1 来源与口径")
     stocks = read_csv(directory / "stocks.csv", STOCK_FIELDS)
     prices = read_csv(directory / "prices.csv", PRICE_FIELDS)
     news = read_csv(directory / "news.csv", NEWS_FIELDS)
@@ -123,7 +132,7 @@ def load_dataset(directory):
         if not row["id"] or row["id"] in ids or not row["title"] or not row["source"]:
             raise ValueError("新闻 ID 必须非空且唯一，标题与来源不能为空")
         ids.add(row["id"])
-        if timestamp(row["available_at"]) < timestamp(row["published_at"]):
+        if timestamp(row["available_at"]) < publication_bound(row):
             raise ValueError(f"可用时间早于发布时间：{row['id']}")
         linked = [item.strip() for item in row["symbols"].split("|") if item.strip()]
         if not linked or len(linked) != len(set(linked)) or set(linked) - symbols:
@@ -132,14 +141,12 @@ def load_dataset(directory):
     for symbol in symbols:
         if sum(row["symbol"] == symbol for row in prices) < 30:
             raise ValueError(f"{symbol} 至少需要 30 个交易日，建议 100 个以上")
-    meta_path = directory / "metadata.json"
-    metadata = json.loads(meta_path.read_text(encoding="utf-8-sig")) if meta_path.exists() else {}
-    if not isinstance(metadata, dict):
-        raise ValueError("metadata.json 必须是对象")
     if "synthetic" in metadata and metadata["synthetic"] is not None and not isinstance(metadata["synthetic"], bool):
         raise ValueError("synthetic 必须为 true、false 或 null")
     if "label" in metadata and (not isinstance(metadata["label"], str) or not metadata["label"].strip()):
         raise ValueError("label 必须是非空文本")
     metadata.setdefault("synthetic", None)
     metadata.setdefault("label", "用户导入 CSV · 真实性由提供者确认")
+    if "contract_version" in metadata:
+        validate_contract(directory, stocks, prices, news, metadata)
     return stocks, sorted(prices, key=lambda row: (row["symbol"], row["date"])), news, metadata
