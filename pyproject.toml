@@ -16,6 +16,7 @@ kggen = ["kg-gen"]
 
 [project.scripts]
 stocksage-graph = "stocksage.visualization:main"
+stocksage-tushare = "stocksage.tushare.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["stocksage*"]
