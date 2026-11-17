@@ -10,6 +10,7 @@ import os
 
 from ..models import ArticleStub
 from .base import http_get
+from .timestamps import iso_from_entry
 
 #: 默认订阅几个以「快讯 + 全文开放」著称的源；可在环境变量里覆盖成逗号分隔的 URL
 DEFAULT_FEEDS = [
@@ -49,18 +50,14 @@ class RssSource:
                 title = (entry.get("title") or "").strip()
                 if query and query.lower() not in title.lower():
                     continue
-                published = ""
-                if entry.get("published_parsed"):
-                    from time import strftime
-
-                    published = strftime("%Y-%m-%dT%H:%M:%SZ", entry.published_parsed)
+                lang = parsed.feed.get("language", "en")[:2].lower() or "en"
                 stubs.append(
                     ArticleStub(
                         source=self.name,
                         url=entry.get("link", ""),
                         title=title,
-                        published_at=published,
-                        lang=parsed.feed.get("language", "en")[:2].lower() or "en",
+                        published_at=iso_from_entry(entry, lang),
+                        lang=lang,
                         license=self.license,
                         extra={"feed": parsed.feed.get("title", feed_url)},
                     )

@@ -1,4 +1,4 @@
-"""科技题材新闻源，**只保留中文源**。
+﻿"""科技题材新闻源，**只保留中文源**。
 
 题材从「中国股票」换成「科技」后，语种也从中英双语收敛到纯中文：需求是「权威、
 带时间标签的中文科技新闻」，英文源在 2026-11 全部移除。
@@ -25,14 +25,13 @@
 
 from __future__ import annotations
 
-import calendar
 import io
 import os
 import re
-import time
 
 from ..models import ArticleStub
 from .base import http_get
+from .timestamps import iso_from_entry, iso_from_struct
 
 #: 单个 feed 最多取多少条（多源合并时由上层再截断）
 PER_FEED_CAP = 40
@@ -68,53 +67,13 @@ SUMMARY_CHARS = 400
 
 
 def _iso_from_struct(struct_time) -> str:
-    """feedparser 的 *_parsed（UTC struct_time）-> ISO 8601 UTC。"""
-    if not struct_time:
-        return ""
-    try:
-        from datetime import datetime, timezone
-
-        ts = calendar.timegm(struct_time)  # struct_time 本身就是 UTC
-        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    except Exception:  # noqa: BLE001
-        return ""
-
-
-#: 时间串里出现这些标记，说明原文自带时区，feedparser 的解释可信
-_TZ_MARK = re.compile(r"(?:GMT|UTC|Z\b|[+-]\d{2}:?\d{2})", re.I)
-
-#: 比「现在」超前多少秒以内算正常（时钟漂移、预发布），超过就认为是时区标错了
-FUTURE_GRACE = 3600
+    """兼容旧调用名；真正的转换在 `sources/timestamps.py`。"""
+    return iso_from_struct(struct_time)
 
 
 def _iso_from_entry(entry, lang: str) -> str:
-    """entry -> ISO 8601 UTC，修正两类错标的时区。
-
-    **第一种：无时区的本地时间。** 中文站点的 `pubDate` 常写成
-    `2026-11-17 09:24:01`（北京时间但省略偏移）。feedparser 按 UTC 解释，整体快 8 小时；
-    `within_window` 里超过 `FUTURE_TOLERANCE`（6 小时）的未来时间戳会被判成解析错误丢掉
-    ——表现为整源静默归零（证券日报就是这么被漏掉的）。原文无时区标记时按 +08:00 折算。
-
-    **第二种：北京时间被标成 GMT。** InfoQ 中文的 `pubDate` 是
-    `Tue, 17 Nov 2026 18:53:07 GMT`，而那一刻北京时间才 18:53——标记对了格式、错了时区。
-    这类错误无法从字符串本身判断，只能靠「新闻不会来自未来」这个约束反推：折算后仍
-    明显超前，就再按 +08:00 纠一次。
-    """
-    parsed = entry.get("published_parsed") or entry.get("updated_parsed")
-    if not parsed:
-        return ""
-    ts = calendar.timegm(parsed)
-    raw = entry.get("published") or entry.get("updated") or ""
-    if lang == "zh" and raw and not _TZ_MARK.search(raw):
-        ts -= 8 * 3600
-    if ts - time.time() > FUTURE_GRACE:
-        ts -= 8 * 3600
-    try:
-        from datetime import datetime, timezone
-
-        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    except Exception:  # noqa: BLE001
-        return ""
+    """兼容旧调用名；真正的时间归一在 `sources/timestamps.py`（口径只写一份）。"""
+    return iso_from_entry(entry, lang)
 
 
 def _clean_summary(raw: str) -> str:
@@ -182,7 +141,7 @@ class TechFeed:
                     source=key,
                     url=link,
                     title=title,
-                    published_at=_iso_from_entry(entry, lang),
+                    published_at=iso_from_entry(entry, lang),
                     lang=lang,
                     license=self.license,
                     extra={
@@ -273,5 +232,7 @@ def default_feeds() -> list[str]:
 def make_default_preset():
     """`--source tech` 的工厂：每次构造时读一次环境变量，便于不改代码换源集合。"""
     return lambda: TechFeed("tech", default_feeds())
+
+
 
 

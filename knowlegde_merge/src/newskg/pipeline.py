@@ -12,6 +12,7 @@ from .dedup import canonicalize_url, content_fingerprint, find_duplicates, simha
 from .models import Article, ArticleStub, Triple, sha1_of
 from .kg.entities import canonicalize
 from .sources.base import RateLimiter
+from .sources.timestamps import pick_published
 from .store import upsert_article, upsert_triples, connect
 from . import config
 
@@ -67,7 +68,8 @@ def process_stub(stub: ArticleStub, limiter: RateLimiter | None = None) -> Artic
     # 反例就在 Solidot——页面 <title> 只有「奇客Solidot」这个站点名，
     # 用 trafilatura 的元数据会把它当标题，两篇不同文章于是同名，入库后无法区分。
     title = (stub.title or ext.title or "").strip() or "(untitled)"
-    published = ext.published_at or stub.published_at or ""
+    # 页面元数据常常只有日期，feed 的 pubDate 才精确到分钟；挑带钟点的那个（见 timestamps.py）
+    published = pick_published(stub.published_at, ext.published_at)
     body_text = ext.body_text or ext.body_markdown
 
     article = Article(

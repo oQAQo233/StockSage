@@ -1,4 +1,4 @@
-"""源体检器：判断一个 feed / 列表页还能不能用。
+﻿"""源体检器：判断一个 feed / 列表页还能不能用。
 
 筛源判据是三条（README §4）：能解析出条目、条目带时间、正文抽得出 >400 字符。
 这个脚本把三条都跑一遍，用来回答两个问题：
@@ -11,7 +11,7 @@
 批量候选：`--candidates cands.txt`，每行 `名称<空格或制表符>URL`，`#` 开头为注释。
 
 判定口径与 `sources/filters.py` 的运行时条件一致：
-- 时间串没有时区标记时按 +08:00 折算（中文源的常见写法，见 `tech._iso_from_entry`）；
+- 时间串没有时区标记时按 +08:00 折算（中文源的常见写法，见 `sources/timestamps.py`）；
 - 「最新一条超过 `--max-age` 天」视为死源，直接判不可用。
 """
 
@@ -33,7 +33,8 @@ sys.path.insert(0, "src")
 
 from newskg.convert import extract_article, fetch_html  # noqa: E402
 from newskg.sources.html_list import HTML_SPECS, date_from_url  # noqa: E402
-from newskg.sources.tech import FEEDS, _iso_from_entry  # noqa: E402
+from newskg.sources.tech import FEEDS  # noqa: E402
+from newskg.sources.timestamps import iso_from_entry  # noqa: E402
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122 Safari/537.36"
 TZ_MARK = re.compile(r"(?:GMT|UTC|Z\b|[+-]\d{2}:?\d{2})", re.I)
@@ -47,9 +48,9 @@ def _fetch_bytes(url: str, timeout: int = 20) -> bytes:
 
 
 def _age_days(raw_time: str, parsed) -> float:
-    """条目时间 -> 距今天数，口径与运行时一致（复用 `tech._iso_from_entry`）。"""
+    """条目时间 -> 距今天数，口径与运行时一致（复用 `timestamps.iso_from_entry`）。"""
     entry = {"published": raw_time, "published_parsed": parsed}
-    iso = _iso_from_entry(entry, "zh")
+    iso = iso_from_entry(entry, "zh")
     if not iso:
         return float("inf")
     dt = datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -201,3 +202,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+

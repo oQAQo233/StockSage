@@ -91,7 +91,7 @@ knowlegde_merge/
 │  ├─ cli.py                13 个子命令
 │  ├─ config.py             路径、限速、阈值、.env 加载
 │  ├─ models.py             ArticleStub / Article / Triple
-│  ├─ sources/              发现层（tech.py、html_list.py、gdelt/guardian/rss、topic_llm、filters）
+│  ├─ sources/              发现层（tech.py、html_list.py、timestamps.py、gdelt/guardian/rss、topic_llm、filters）
 │  ├─ convert.py            抓 HTML → 正文 → Markdown
 │  ├─ dedup.py              四层去重
 │  ├─ pipeline.py           process_stub / ingest / build_graph
@@ -151,7 +151,18 @@ knowlegde_merge/
 .\.venv\Scripts\python.exe tools\probe_sources.py --url https://example.com/rss --label 某站
 ```
 
-三个跟时间有关的坑都在 `_iso_from_entry` 里修掉了：无时区的本地时间（证券日报）、只有日期没有时刻（列表页源）、**北京时间标成 GMT**（InfoQ 中文，实测时间超前 8 小时且日志里毫无异常）。
+四个跟时间有关的坑，前三个在 `sources/timestamps.py` 里修掉，第四个在 `pipeline.py`：
+
+| 坑 | 症状 | 修法 |
+| --- | --- | --- |
+| 无时区的本地时间（证券日报） | 整源静默归零 | 原文无时区标记时按 `+08:00` 折算 |
+| 只有日期、没有时刻（列表页源） | 打分池永远排最后 | `_fair_pool()` 按源轮流取 |
+| **北京时间标成 GMT**（InfoQ 中文） | 时间超前 8 小时，日志无异常 | 折算后仍超前 >1 小时就再纠一次 |
+| **页面元数据覆盖 feed 时间** | 全库时间都变成 `T00:00:00Z` | `pick_published()` 优先选带钟点的那个 |
+
+第四个坑最隐蔽：`trafilatura` 从正文页抽的 `date` 常常只有日期，而入库时写的是 `ext.published_at or stub.published_at`——页面元数据优先，于是 52 篇真实新闻的发布时间全被抹成当天零点。时间窗过滤在入库**之前**就做完了，所以流水线一路绿灯，只有按时间排序时才看得出错。
+
+时间归一**只有一份实现**：`tech.py`（科技池）、`rss.py`（通用 `--source rss`）、`tools/probe_sources.py`（体检器）、`pipeline.py`（入库）都 import `timestamps.py`。这几处以前各写一套，结果体检通过、入库却错位——检查器和被检查的代码用不同口径，检查就没有意义。
 
 ---
 
@@ -262,4 +273,5 @@ LLM 抽出来的实体名有三种脏：写法不同（`NVIDIA` / `英伟达`）
 - 抓取按 `NEWSKG_POLITE_DELAY` 限速，**不绕过任何反爬**：被 403/405/429 挡下的源直接放弃。
 - `.env` 里的大模型 key 不要提交；仓库只保留 `.env.example`。
 - `data/fixtures/` 是合成样例，不是真实新闻，不能当语料引用。
+
 
