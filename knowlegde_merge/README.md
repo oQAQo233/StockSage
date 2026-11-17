@@ -1,4 +1,4 @@
-﻿# NewsKG：新闻 → 统一 Markdown → 知识图谱
+# NewsKG：新闻 → 统一 Markdown → 知识图谱
 
 把新闻抓下来（当前是 11 个中文科技源），抽成 `(主体, 关系, 客体)` 三元组，落进 SQLite，再导出成可交互的知识图谱。
 
@@ -140,6 +140,18 @@ knowlegde_merge/
 第 2 条淘汰率最高：人民网的 feed 有日期但停在 2024 年，新浪停在 2018 年，搜狐停在 2016 年——"有日期"和"日期是新的"是两件事。
 
 新华网、科技日报的 RSS 都已下线，`sources/html_list.py` 用**列表页 + URL 里的日期**把它们接了回来。规则只有一条："从 URL 读日期"，站点换模板也不受影响。
+
+站点改版、RSS 下线是常态，所以要能自己体检：
+
+```bat
+:: 11 个源挨个过一遍：能解析 / 带时间 / 正文 >400 字符
+.\.venv\Scripts\python.exe tools\probe_sources.py
+
+:: 探一个候选源值不值得加
+.\.venv\Scripts\python.exe tools\probe_sources.py --url https://example.com/rss --label 某站
+```
+
+三个跟时间有关的坑都在 `_iso_from_entry` 里修掉了：无时区的本地时间（证券日报）、只有日期没有时刻（列表页源）、**北京时间标成 GMT**（InfoQ 中文，实测时间超前 8 小时且日志里毫无异常）。
 
 ---
 
