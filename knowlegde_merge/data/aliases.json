@@ -1,0 +1,26 @@
+{
+  "_comment": "实体别名表：canonical -> [别名...]。查表时 ASCII 不区分大小写。改这里不用改代码。",
+  "_note": "当前条目全部来自 2026-11 科技语料的实测重复，扩充时优先按「同一实体、语言不同或缩写不同」补。",
+  "entities": {
+    "Capcom": ["卡普空", "CAPCOM"],
+    "Grand Theft Auto VI": ["GTA VI", "GTA 6", "GTA6"],
+    "NVIDIA": ["英伟达", "Nvidia"],
+    "Microsoft": ["微软", "Microsoft Corp", "Microsoft Corporation"],
+    "Apple": ["苹果公司", "Apple Inc."],
+    "OpenAI": ["Open AI"],
+    "Samsung": ["三星", "Samsung Electronics"],
+    "TSMC": ["台积电", "台湾积体电路"],
+    "Huawei": ["华为"],
+    "Google": ["谷歌", "Alphabet"],
+    "Amazon": ["亚马逊", "亚马逊云科技", "AWS"],
+    "Meta": ["Facebook", "Meta Platforms"],
+    "Tesla": ["特斯拉"],
+    "Rocket Lab": ["火箭实验室"],
+    "ULA": ["United Launch Alliance"],
+    "Hugging Face": ["抱抱脸"],
+    "Jensen Huang": ["黄仁勋"],
+    "Sam Altman": ["山姆·奥特曼", "奥尔特曼"],
+    "Switch 2": ["Nintendo Switch 2"],
+    "幻方": ["High-Flyer"]
+  }
+}

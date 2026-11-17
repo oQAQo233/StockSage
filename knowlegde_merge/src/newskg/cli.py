@@ -19,6 +19,8 @@ from pathlib import Path
 from . import config, evaluate as evaluate_mod, store
 from . import compare as compare_mod
 from .kg import build_extractor
+from .kg.entities import canonicalize
+from .models import Triple
 from .pipeline import build_graph, ingest, reset
 from .sources import FilteredSource, build_source
 
@@ -227,6 +229,43 @@ def cmd_import_corpus(args) -> int:
     return 0
 
 
+def cmd_renormalize(args) -> int:
+    """按当前别名表重写库里的实体名，不重新调用抽取器。
+
+    别名表是知识，改它是常事；重跑 LLM 既贵又慢，而且同样的输入未必得到同样的输出
+    （温度不为 0 时连结果都会漂）。这个命令只做字符串层的重算。
+    """
+    conn = store.connect(Path(args.db) if args.db else (config.OUT / "demo.sqlite3"))
+    rows = conn.execute(
+        "SELECT subject, predicate, object, article_id, published_at, source,"
+        " extractor, confidence FROM triples"
+    ).fetchall()
+    if not rows:
+        print("[renormalize] 库里没有三元组")
+        return 0
+
+    triples = [
+        Triple(
+            subject=r["subject"], predicate=r["predicate"], object=r["object"],
+            article_id=r["article_id"], published_at=r["published_at"] or "",
+            source=r["source"] or "", extractor=r["extractor"],
+            confidence=float(r["confidence"] or 1.0),
+        )
+        for r in rows
+    ]
+    fixed, merged = canonicalize(triples)
+    conn.execute("DELETE FROM triples")
+    written = store.upsert_triples(conn, fixed)
+    conn.commit()
+    conn.close()
+
+    print(f"[renormalize] {len(triples)} 条 → 写入 {written} 条"
+          f"（过滤 {len(triples) - len(fixed)} 条泛化/自环，合并 {len(merged)} 处别名）")
+    for pair in list(merged)[:10]:
+        print(f"    {pair}")
+    return 0
+
+
 def cmd_reset(args) -> int:
     conn = _open_db(args.db)
     reset(conn, keep_articles=args.keep_articles)
@@ -399,6 +438,10 @@ def build_parser() -> argparse.ArgumentParser:
     _add_db_option(p)
     p.add_argument("--manifest", help="清单路径，默认 data/corpus/manifest.json")
     p.set_defaults(func=cmd_import_corpus)
+
+    p = sub.add_parser("renormalize", help="按当前别名表重写实体名（不重跑抽取）")
+    _add_db_option(p)
+    p.set_defaults(func=cmd_renormalize)
 
     p = sub.add_parser("reset", help="清空数据")
     _add_db_option(p)

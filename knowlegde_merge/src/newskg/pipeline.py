@@ -10,6 +10,7 @@ from .config import FIXTURES, MD, RAW, ROOT
 from .convert import Extracted, build_markdown_document, extract_article, fetch_html
 from .dedup import canonicalize_url, content_fingerprint, find_duplicates, simhash
 from .models import Article, ArticleStub, Triple, sha1_of
+from .kg.entities import canonicalize
 from .sources.base import RateLimiter
 from .store import upsert_article, upsert_triples, connect
 from . import config
@@ -206,6 +207,12 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
             markdown_path=row["markdown_path"],
         )
         triples: list[Triple] = extractor.extract(article)
+        # 实体归一化放在抽取之后、入库之前：同一个实体在不同文章里写成
+        # `Capcom` / `卡普空` 时，不合并就是把度数切碎，跨文章共现永远统计不出来。
+        triples, merged = canonicalize(triples)
+        if merged and verbose:
+            sample = "、".join(list(merged)[:3])
+            print(f"      实体归一：合并 {len(merged)} 处（如 {sample}）", flush=True)
         total += upsert_triples(conn, triples)
         # 台账无条件记录：抽到 0 条也算处理过，否则每次都会重跑（LLM 就是重付费）
         conn.execute(

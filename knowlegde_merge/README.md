@@ -153,7 +153,8 @@ knowlegde_merge/
 │  ├─ pipeline.py           process_stub / ingest / build_graph / reset
 │  ├─ store.py              建表、统计、三种图导出（json / cypher / graphml）
 │  ├─ kg/                   rule.py（离线基线） llm.py（OpenAI 兼容） kggen.py（第三方）
-│  │   └─ base.py           抽取器协议 + 中英谓词归一 + 篇内去重
+│  │   ├─ base.py           抽取器协议 + 中英谓词归一 + 篇内去重
+│  │   └─ entities.py       实体归一化：字符层 + 别名表 + 泛化宾语过滤
 │  ├─ evaluate.py           gold 打分（strict / relaxed）+ 报告生成
 │  └─ compare.py            多后端对照，缺 key 不中断
 ├─ tools/                   辅助脚本（不入主链路，见 §10）
@@ -164,6 +165,7 @@ knowlegde_merge/
 │  ├─ raw/                  抓取快照 *.html
 │  ├─ md/                   统一 Markdown *.md（当前 126 篇，见 §7.1）
 │  ├─ corpus/manifest.json  32 篇冻结英文语料的元数据清单
+│  ├─ aliases.json          实体别名表（canonical → 别名），手工维护
 │  └─ gold/                 gold 集：corpus.csv / corpus_zh.csv / fixtures.csv + parts/
 ├─ docs/REPORT.md           实验报告正文（三方对照的完整分析）
 └─ out/                     运行产物（数据库、图、对照表、日志）
@@ -302,6 +304,28 @@ WHERE (a.duplicate_of IS NULL OR a.duplicate_of = '')
 
 三个后端的行为差异见 §6。
 
+#### 实体归一化（`kg/entities.py`）
+
+抽取器每篇独立跑，同一实体会写成不同样子。不合并的后果在图上最直观：`Capcom` 和 `卡普空` 是两个节点，`GTA VI` 和 `Grand Theft Auto VI` 也是，度数被切碎，跨文章共现统计不出来。
+
+归一化分三层，**顺序不能颠倒**：
+
+| 层 | 做什么 | 例子 |
+| --- | --- | --- |
+| 字符层 | NFKC 全半角、去首尾空白、去包裹的书名号/引号、压缩空白、去尾标点 | `《虚幻引擎》` → `虚幻引擎` |
+| 别名层 | 查 `data/aliases.json`（ASCII 不区分大小写） | `卡普空` / `CAPCOM` → `Capcom`；`GTA 6` → `Grand Theft Auto VI` |
+| 过滤层 | 丢掉宾语是泛化类别的边、归一后退化成自环的边 | `Anthropic uses AI` 整条丢弃 |
+
+三个设计决定：
+
+- **别名表外置成 JSON**（`data/aliases.json`），不写在代码里。它是知识不是逻辑，补一条别名不该动代码、更不该重跑测试。文件缺失时退化为「只做字符层」，不阻塞流水线。
+- **只改主语/宾语，不动谓词**。谓词归一化是 `kg/base.py` 的事，两件事分开才能分别定位问题（是这个实体的写法没合，还是动词没收敛）。
+- **泛化宾语的黑名单刻意很短**（AI / 技术 / 产品 / 软件 / 平台 / 系统…）。这类边的危害是让 `AI` 变成度数最高的节点；但黑名单一长就会错杀（`英伟达 供应 芯片` 里的「芯片」是真实关系），所以宁可漏杀。想更激进就自己往 `GENERIC_OBJECTS` 里加。
+
+提示词侧同步加了两条硬规则（`kg/llm.py`）：宾语必须是**具体命名实体**，禁止类别词；不许把来源媒体当主语抽「报道」关系。两道防线是有意重叠的——提示词管「一开始就别抽」，归一化管「已经抽出来的怎么收拾」，因为模型并不总听话。
+
+改名不必重新付费：`renormalize` 子命令直接对库里已有的三元组重算字符串层（`.\run.cmd --db out\tech.sqlite3 renormalize`）。**为什么不重跑抽取**：LLM 不是确定性函数，重跑一遍既花钱又可能得到不同结果，而你只想让 `卡普空` 变成 `Capcom`。
+
 ### 3.7 阶段 5：存储模型
 
 四张结构，全部在 `store.SCHEMA` 里：
@@ -402,6 +426,9 @@ $env:PYTHONPATH="src"
 :: 4. 用冻结语料复现对照实验（先重建，再跑）
 .\run.cmd import-corpus --db out\corpus.sqlite3
 .\run.cmd --db out\corpus.sqlite3 compare --backends rule,llm
+
+:: 5. 改了 data\aliases.json 之后，就地重写实体名，不重跑抽取（不花钱）
+.\run.cmd --db out\tech.sqlite3 renormalize
 ```
 
 ---
@@ -567,6 +594,7 @@ set NEWSKG_LLM_MODEL=qwen2.5:14b
 | `gold/fixtures.csv` | 样例集 gold | 20 条 / 7 篇 |
 | `gold/parts/*.json` | 逐篇标注原文（溯源用） | 20 个 |
 | `gold/parts_zh/*.json` | 中文逐篇标注 | 5 个 |
+| `aliases.json` | 实体别名表 | 20 组（Capcom/卡普空、GTA VI…），可自行扩充 |
 
 > `data/md` 里 126 篇 ≠ manifest 的 32 篇：多出来的是中文财经抓取与其他试跑留下的正文（`out/cn_gold.sqlite3` 等库引用的就是它们），manifest 只登记冻结的英文语料。
 
@@ -758,7 +786,7 @@ set NEWSKG_LLM_BASE_URL=http://127.0.0.1:8765/v1
 
 ## 12. 已知局限
 
-1. **实体消歧没做。** `Apple` / `Apple Inc.` 只按小写归并，没有别名词典与上下文消歧。
+1. **实体消歧只做了「写法层」**：`kg/entities.py` 能合并 `Capcom`/`卡普空`、`GTA 6`/`Grand Theft Auto VI` 这类同指异写，靠的是**手工别名表**，不做上下文消歧——`Apple`（公司）与 `apple`（水果）、`Meta`（公司）与 `meta`（前缀）仍会合并。别名表没覆盖到的写法也不会自动发现。
 2. **时间只到天，且用的是文章发布时间**，不是事件发生时间。真实系统需要 `valid_from` / `valid_to` 双时态。
 3. **关系类型封闭与开放并存**：`rule` 只有固定模板；`llm` 开放但没有 schema 约束校验。
 4. **gold 是模型辅助标注的（最大的效度威胁）**：246 条由标注代理逐篇通读生成 + 作者抽查，与 `llm` 抽取器共享同一模型家族，等于让被测系统参与制定评分标准。严格实验应人工独立标注，或双人标注算 Cohen's κ。

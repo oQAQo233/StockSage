@@ -37,7 +37,10 @@ SYSTEM = (
     '"relations":[{"subject":"...","predicate":"...","object":"..."}]}. '
     "Rules: subject and object must appear in the text; predicate must be a short "
     "lowercase verb phrase (acquired, appointed, leads, located_in, sanctioned, said...); "
-    "no pronouns; no more than 25 relations; no explanations, no markdown fences."
+    "no pronouns; subject and object must be **concrete named entities** (person, org, place, "
+    "named product or event) — never generic categories such as AI, technology, product, "
+    "software or platform; never emit attribution relations whose subject is the news outlet "
+    "(BBC reported X); no more than 25 relations; no explanations, no markdown fences."
 )
 
 #: 中文文章用这套。谓词改成**中文规范词**，与 `PREDICATES_ZH` 的规范形态对齐。
@@ -53,7 +56,12 @@ SYSTEM_ZH = (
     "停牌、复牌、分红、质押、解押、处罚、立案、问询、起诉、辞职、任命、合作、供应、采购、"
     "设立、更名、破产、重整、重组、澄清、否认、解禁、披露、亏损、盈利；"
     "3) 词表里没有合适动词时，用 2–4 个汉字自拟，不要用英文、不要带「了/的/被/进行/完成」；"
+    "3.5) 科技类报道常用：发布、推出、开源、搭载、集成、升级、支持、收购、投资、起诉、"
+    "被罚、泄露、裁员、离职、召回、合作、供应；"
     "4) 不要抽「说了什么」「认为」「表示」这类转述关系；"
+    "4.5) subject 与 object 必须是**具体命名实体**（人、机构、地名、具名产品/事件），"
+    "禁止用「AI」「人工智能」「技术」「产品」「软件」「平台」这类类别词作宾语；"
+    "4.6) 不要把来源媒体（IT之家、Solidot、BBC、TechCrunch）当 subject 抽「报道」关系；"
     "5) 不要抽行情状态（涨停、下跌）——那是行情不是关系；"
     "6) 最多 25 条，subject 与 object 不能相同；"
     "7) 只输出 JSON，不要解释、不要 Markdown 代码块。"
