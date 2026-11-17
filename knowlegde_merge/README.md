@@ -1,4 +1,4 @@
-﻿# NewsKG：新闻 → 统一 Markdown → 知识图谱
+# NewsKG：新闻 → 统一 Markdown → 知识图谱
 
 把新闻抓下来（当前是 11 个中文科技源），用 **KGGen** 抽成 `(主体, 关系, 客体)` 三元组，落进 SQLite，再导出成可交互的知识图谱。
 
@@ -30,7 +30,29 @@ copy .env.example .env
 
 `requirements.txt` 里只有抓取/转换/存储要用的 6 个库；抽取用的 `kg-gen` 单独放在 `requirements-kggen.txt`——它体积大、依赖重，单独装进 `.kgvenv`，`run.cmd` 会把 `src` 和 `.kgvenv` 一起挂到 `PYTHONPATH` 上。
 
-`kg_gen` 导入时会连带加载 `pyarrow`。如果所在机器有应用控制策略拦了 `_dataset` 这个 DLL，会看到 `ImportError: The pyarrow installation is not built with support for 'dataset'`——那是环境限制，不是代码问题。
+`kg_gen` 导入时会连带加载 `pyarrow`：`kg_gen` → `sentence_transformers` → `datasets` → `pyarrow.dataset`。如果所在机器有应用控制策略（WDAC/AppLocker）拦了 `pyarrow/_dataset.cp3xx-win_amd64.pyd`，会看到：
+
+```
+ImportError: The pyarrow installation is not built with support for 'dataset'
+(DLL load failed while importing _dataset: 应用程序控制策略已阻止此文件。)
+```
+
+**这是环境限制，不是代码问题**，而且换一个 pyarrow 版本就能绕过（实测 26.0.1 被拦、23.0.1 可用）：
+
+```bat
+:: 把 .kgvenv 里的 pyarrow 换成 23.x（用系统 python 的 pip，装完把目录拷回来）
+python -m pip install --target .tmp\pa23 pyarrow==23.0.1
+rmdir /s /q .kgvenv\pyarrow .kgvenv\pyarrow-26.0.1.dist-info
+xcopy /e /i .tmp\pa23\pyarrow .kgvenv\pyarrow
+xcopy /e /i .tmp\pa23\pyarrow-23.0.1.dist-info .kgvenv\pyarrow-23.0.1.dist-info
+```
+
+换完用一句命令确认，能打印出版本号就说明通了：
+
+```bat
+set PYTHONPATH=src;.kgvenv
+.venv\Scripts\python.exe -c "import pyarrow.dataset; from kg_gen import KGGen; print('ok')"
+```
 
 ---
 
@@ -190,9 +212,17 @@ knowlegde_merge/
 
 | 变量 | 默认 | 作用 |
 | --- | --- | --- |
-| `NEWSKG_KGGEN_MODEL` | `openai/gpt-4o-mini` | 抽取模型 |
-| `NEWSKG_KGGEN_BASE_URL` | 空（沿用 `NEWSKG_LLM_BASE_URL`） | 端点 |
+| `NEWSKG_KGGEN_MODEL` | 沿用 `NEWSKG_LLM_MODEL` | 抽取模型；不带 `provider/` 前缀时自动补 `openai/` |
+| `NEWSKG_KGGEN_BASE_URL` | 沿用 `NEWSKG_LLM_BASE_URL` | 端点 |
 | `NEWSKG_KGGEN_MAX_TOKENS` | 8192 | 单篇输出上限；调小会让长文的 JSON 被截断、整篇记 0 条 |
+
+本地实测（`qwen3.7-plus`，一篇 4000 字左右的科技新闻，全链路 `fetch → build → export`）：单篇 15–36 条三元组，4 篇合起来 85 条、`--min-degree 2` 后 22 个节点 24 条边；`demo` 的 8 篇合成样例出 75 条。
+
+| 环节 | 实测 |
+| --- | --- |
+| 实体归一 | 每篇约 1 处合并（`谷歌`→`Google`、`华为`→`Huawei`、全角括号→半角） |
+| 谓词语言 | 中文文章全出中文谓词（`支持` / `指出` / `引入`） |
+| 失败台账 | 抽到 0 条也会写 `runs`，不会反复重付费 |
 
 谓词按语种分流：中文出中文谓词（`收购` / `发布` / `搭载`），英文出 `snake_case`（`acquired` / `located_in`）。分流是必要的——中文实体配英文谓词，图上的边会显得"半土半洋"，后续按谓词聚合也做不了。
 
@@ -262,6 +292,7 @@ KGGen 抽出来的实体名有三种脏：写法不同（`NVIDIA` / `英伟达`�
 5. **列表页源只到"天"**：新华网、科技日报无法提供精确到分钟的发布时间。
 6. **单机 SQLite**：上万篇要换 Postgres 或图数据库，`export cypher` 是迁移入口。
 7. **KGGen 是黑盒**：它的分块与聚类策略不可调，只能通过 `max_tokens` 间接影响产出。
+8. **英文谓词归一不彻底**：中文谓词有词典（`收购`/`中标`/`签订`…），英文只靠一张小别名表，于是 `raises` / `raised` / `raised_on` 会变成三条不同的边。中文语料不受影响，跑英文语料时图上会显得碎。
 
 ---
 

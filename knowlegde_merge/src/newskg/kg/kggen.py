@@ -28,7 +28,15 @@ class KGGenExtractor:
                 "装好后用 PYTHONPATH=src;.kgvenv 运行（kg-gen 放在独立环境里）。"
             ) from None
 
-        self.model = model or os.getenv("NEWSKG_KGGEN_MODEL", "openai/gpt-4o-mini")
+        # 三个 NEWSKG_KGGEN_* 都是可选的：不设就沿用 NEWSKG_LLM_*，只有一个 key 的场景
+        # 不用再配一遍。默认模型用 LLM.model（而不是 gpt-4o-mini），否则接的是国产网关时
+        # 模型名对不上，报的错会指向“模型不存在”，看起来像代码问题。
+        self.model = model or os.getenv("NEWSKG_KGGEN_MODEL") or LLM.model
+        endpoint = base_url or os.getenv("NEWSKG_KGGEN_BASE_URL") or LLM.base_url
+        if endpoint and "/" not in self.model:
+            # 自定义端点都是 OpenAI 协议；litellm 要求模型名带 provider 前缀，
+            # 只写 qwen3.7-plus 会被当成“没给服务商”直接报错，而报错信息里看不出是前缀问题。
+            self.model = f"openai/{self.model}"
         kwargs = {
             "model": self.model,
             "temperature": 0.0,
@@ -37,7 +45,6 @@ class KGGenExtractor:
             "max_tokens": int(os.getenv("NEWSKG_KGGEN_MAX_TOKENS", "8192")),
             "api_key": api_key or LLM.api_key or None,
         }
-        endpoint = base_url or os.getenv("NEWSKG_KGGEN_BASE_URL")
         if endpoint:
             # kg-gen 0.4 用 api_base，早期版本用 base_url；两个都试，别为版本差异改代码。
             try:

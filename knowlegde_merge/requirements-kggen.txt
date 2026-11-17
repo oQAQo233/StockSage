@@ -1,1 +1,3 @@
 ﻿kg-gen>=0.2
+# 若 Windows 应用控制策略拦了 pyarrow 26 的 _dataset.pyd（报错见 README §0），取消注释下一行重装：
+# pyarrow==23.0.1
