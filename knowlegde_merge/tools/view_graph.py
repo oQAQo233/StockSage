@@ -1,4 +1,4 @@
-"""把 SQLite 里的三元组渲染成一个可交互的 HTML 图，用浏览器打开即可。
+﻿"""把 SQLite 里的三元组渲染成一个可交互的 HTML 图，用浏览器打开即可。
 
 为什么用 pyvis 而不是 matplotlib：三元组天然是图结构，让节点可拖拽、悬停看边标签，
 比静态图片有用得多。pyvis 把 networkx 的图转成 vis.js 的前端页面。
@@ -25,7 +25,7 @@ from newskg.store import connect  # noqa: E402
 def main() -> int:
     ap = argparse.ArgumentParser(description="把知识图谱渲染成交互式 HTML")
     ap.add_argument("--db", default="out/corpus.sqlite3", help="SQLite 库路径")
-    ap.add_argument("--extractor", default="", help="只看某个抽取器（rule/llm/kggen），留空看全部")
+    ap.add_argument("--extractor", default="", help="只看某个抽取器（默认 kggen），留空看全部")
     ap.add_argument("--out", default="out/graph.html", help="输出的 HTML 路径")
     ap.add_argument("--limit", type=int, default=300, help="最多画多少条边（太多会卡）")
     ap.add_argument("--min-degree", type=int, default=1, help="只画度数 >= N 的节点")

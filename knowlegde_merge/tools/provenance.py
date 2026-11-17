@@ -1,4 +1,4 @@
-"""溯源：给定一个实体或一条三元组，查出它来自哪些文章、哪一句原文。
+﻿"""溯源：给定一个实体或一条三元组，查出它来自哪些文章、哪一句原文。
 
 三层溯源：
     三元组行 → articles 行 → 原文（URL + 本地 HTML 快照 + Markdown 快照 + 具体句子）
@@ -6,8 +6,8 @@
 前两层靠数据库外键，第三层靠读 data/md 的正文现场定位句子。
 
 用法：
-    python tools/provenance.py --db out/cn_gold.sqlite3 --subject 超聚变
-    python tools/provenance.py --db out/cn_gold.sqlite3 --s 侨源股份 --p 签订
+    python tools/provenance.py --db out/tech.sqlite3 --subject 超聚变
+    python tools/provenance.py --db out/tech.sqlite3 --s 侨源股份 --p 签订
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ def _find_sentence(body: str, *needles: str) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="查三元组/实体的原始出处")
-    ap.add_argument("--db", default="out/cn_gold.sqlite3")
+    ap.add_argument("--db", default="out/tech.sqlite3")
     ap.add_argument("--subject", help="只按实体名查（主宾都算）")
     ap.add_argument("--s", help="主语")
     ap.add_argument("--p", help="谓词")

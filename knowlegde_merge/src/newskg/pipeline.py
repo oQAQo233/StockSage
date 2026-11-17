@@ -165,10 +165,12 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
                 verbose: bool = True, only_ids: set[str] | None = None) -> int:
     """对库里尚未被**这个抽取器**处理过的文章跑抽取。
 
-    按 extractor 去重，而不是按文章去重——否则第二个后端会因为没有「未处理文章」而一条都跑不出来，
+ 
+
     三方对照就无从谈起。
 
-    only_ids 用来把范围限制在「有 gold 的文章」：没标注的文章跑了也不进指标，
+    
+
     对按 token 计费的后端就是纯浪费。
     """
     sql = """
@@ -232,8 +234,8 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
     conn.commit()
     if rows and total == 0 and verbose:
         print(
-            "      注意：这批文章一条三元组也没抽出来。规则后端只认少数几种动词模板，"
-            "真实新闻的叙述体很容易全军覆没——这正是要换 --backend llm 的理由。"
+            "      注意：这批文章一条三元组也没抽出来。常见原因是模型端点不可用、"
+            "或 KGGen 的 JSON 输出被截断（可调 NEWSKG_KGGEN_MAX_TOKENS）。"
         )
     return total
 
@@ -252,3 +254,4 @@ def reset(conn: sqlite3.Connection, keep_articles: bool = False) -> None:
     if not keep_articles:
         conn.execute("DELETE FROM articles")
     conn.commit()
+

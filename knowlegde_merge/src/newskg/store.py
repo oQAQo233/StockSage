@@ -140,9 +140,8 @@ def upsert_article(conn: sqlite3.Connection, article: Article, duplicate_of: str
 def upsert_triples(conn: sqlite3.Connection, triples: list[Triple]) -> int:
     rows = []
     for t in triples:
-        # 主键必须含 extractor：三个后端会被要求抽同一篇文章，
-        # 若只按 (s,p,o,article_id) 去重，后跑的后端会把先跑的记录覆盖成自己的，
-        # 对照实验就失真了（实测 rule 的 3 条被 llm 抢走 1 条，F1 从 0.8% 掉到 0）。
+        # 主键含 extractor：换模型只是换 extractor 名，同一篇文章可以再抽一遍，
+        # 两份结果并存而不是互相覆盖（要对比时按 extractor 过滤即可）。
         tid = hashlib.sha1(
             f"{t.subject}|{t.predicate}|{t.object}|{t.article_id}|{t.extractor}".encode("utf-8")
         ).hexdigest()[:20]

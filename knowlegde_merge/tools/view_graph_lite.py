@@ -1,4 +1,4 @@
-"""零依赖图谱查看器：读 SQLite，产出**单文件** HTML（内联 JS，无 CDN、无第三方包）。
+﻿"""零依赖图谱查看器：读 SQLite，产出**单文件** HTML（内联 JS，无 CDN、无第三方包）。
 
 和 `tools/view_graph.py`（pyvis，需要 .kgvenv + pyvis 资源内联）的分工：
 - 这个脚本不依赖任何包，主环境直接跑，生成的 HTML 断网可开、可发给别人。
@@ -356,7 +356,7 @@ def layout(nodes: dict, edges: list) -> dict[str, tuple[float, float]]:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default="out/tech.sqlite3")
-    ap.add_argument("--extractor", default="", help="只看某个抽取器（rule/llm/kggen）")
+    ap.add_argument("--extractor", default="", help="只看某个抽取器（默认 kggen）")
     ap.add_argument("--out", default="", help="输出 HTML（默认 out/graph_lite.html）")
     ap.add_argument("--limit", type=int, default=300, help="最多多少条边")
     ap.add_argument("--min-degree", type=int, default=1, help="只画度数 >= N 的节点")

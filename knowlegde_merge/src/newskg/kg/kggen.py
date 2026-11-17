@@ -1,10 +1,10 @@
-"""KGGen 后端适配。
+"""KGGen 后端适配（当前唯一的抽取后端）。
 
-KGGen（NeurIPS'25，`pip install kg-gen`）相比手写 prompt 的增量在于**实体聚类**：
+KGGen（NeurIPS'25，`pip install kg-gen`）的增量在于**实体聚类**：
 它会把 "Apple"、"Apple Inc."、"AAPL" 归到同一个簇，直接降低图的稀疏度。
-课程作业里把它作为「第三方抽取器」对照，能说明自写规则/自写 prompt 的差距在哪。
 
-注意：kg-gen 依赖 litellm + dspy，安装体积不小；没装时这里给出明确提示而不是 ImportError 栈。
+依赖较重（litellm + dspy），且需要独立环境：`kg-gen` 装在 `.kgvenv`，
+运行时用 `PYTHONPATH=src;.kgvenv`。没装时这里给明确提示，而不是抛 ImportError 栈。
 """
 
 from __future__ import annotations
@@ -25,8 +25,7 @@ class KGGenExtractor:
         except ImportError:
             raise SystemExit(
                 "KGGen 后端需要先安装：pip install kg-gen\n"
-                "装不动的话，用 --backend rule 或 --backend llm 跑同样的流程，"
-                "三种后端的输出落的是同一张表，可以直接对比。"
+                "装好后用 PYTHONPATH=src;.kgvenv 运行（kg-gen 放在独立环境里）。"
             ) from None
 
         self.model = model or os.getenv("NEWSKG_KGGEN_MODEL", "openai/gpt-4o-mini")

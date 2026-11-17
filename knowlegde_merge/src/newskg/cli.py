@@ -1,11 +1,10 @@
-"""命令行入口。
+﻿"""命令行入口。
 
     python -m newskg.cli demo
-    python -m newskg.cli fetch --source gdelt --query "..." --limit 10
-    python -m newskg.cli build --backend rule
+    python -m newskg.cli fetch --source tech --limit 20
+    python -m newskg.cli build
     python -m newskg.cli export --format all
     python -m newskg.cli stats
-    python -m newskg.cli eval
 """
 
 from __future__ import annotations
@@ -16,8 +15,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import config, evaluate as evaluate_mod, store
-from . import compare as compare_mod
+from . import config, store
 from .kg import build_extractor
 from .kg.entities import canonicalize
 from .models import Triple
@@ -76,7 +74,7 @@ def cmd_fetch(args) -> int:
 
 def cmd_build(args) -> int:
     config.ensure_dirs()
-    extractor = build_extractor(args.backend)
+    extractor = build_extractor()
     conn = _open_db(args.db)
     print(f"[build] 后端 = {extractor.name}")
     try:
@@ -135,100 +133,6 @@ def cmd_dump(args) -> int:
     return 0
 
 
-def cmd_eval(args) -> int:
-    conn = _open_db(args.db)
-    gold_path = Path(args.gold) if args.gold else (config.GOLD / "fixtures.csv")
-    if not gold_path.exists():
-        print(f"找不到 gold 集：{gold_path}", file=sys.stderr)
-        return 2
-    gold = evaluate_mod.load_gold(gold_path)
-    result = evaluate_mod.evaluate_extractor(conn, gold, args.backend)
-    conn.close()
-    payload = {k: v for k, v in result.items() if k != "per_article"}
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_compare(args) -> int:
-    config.ensure_dirs()
-    conn = _open_db(args.db)
-    gold_path = Path(args.gold) if args.gold else (config.GOLD / "corpus.csv")
-    if not gold_path.exists():
-        print(f"找不到 gold 集：{gold_path}", file=sys.stderr)
-        print("先跑 export-corpus 导出语料清单，再用 gold 标注", file=sys.stderr)
-        return 2
-
-    backends = [b.strip() for b in args.backends.split(",") if b.strip()]
-    results = compare_mod.run(conn, gold_path, backends, limit=args.limit)
-
-    gold = evaluate_mod.load_gold(gold_path)
-    sources = conn.execute("SELECT DISTINCT source FROM articles").fetchall()
-    meta = {
-        "corpus_articles": conn.execute("SELECT COUNT(*) c FROM articles").fetchone()["c"],
-        "corpus_sources": ", ".join(r["source"] for r in sources),
-        "gold_total": sum(len(v) for v in gold.values()),
-        "gold_articles": len(gold),
-        "generated_at": _now(),
-    }
-    md = compare_mod.write_markdown(results, config.OUT / "comparison.md", meta)
-    csv_path = compare_mod.write_csv(results, config.OUT / "comparison.csv")
-    conn.close()
-
-    print()
-    print(f"[compare] {md}")
-    print(f"[compare] {csv_path}")
-    return 0
-
-
-def cmd_export_corpus(args) -> int:
-    """把当前库里的文章清单导成 JSON，配合 data/md 就能离线重建语料。"""
-    conn = _open_db(args.db)
-    rows = conn.execute(
-        "SELECT * FROM articles WHERE duplicate_of IS NULL OR duplicate_of = '' ORDER BY published_at DESC"
-    ).fetchall()
-    fields = [
-        "article_id", "source", "url", "canonical_url", "title", "published_at",
-        "lang", "license", "content_sha1", "simhash", "markdown_path", "word_count", "fetched_at",
-    ]
-    payload = [{k: row[k] for k in fields} for row in rows]
-    conn.close()
-
-    out = Path(args.out) if args.out else (config.DATA / "corpus" / "manifest.json")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[export-corpus] {len(payload)} 篇 -> {out}")
-    return 0
-
-
-def cmd_import_corpus(args) -> int:
-    """从 manifest 重建文章表（不联网），配合已提交的 data/md 使用。"""
-    manifest = Path(args.manifest) if args.manifest else (config.DATA / "corpus" / "manifest.json")
-    if not manifest.exists():
-        print(f"找不到 manifest：{manifest}", file=sys.stderr)
-        return 2
-    payload = json.loads(manifest.read_text(encoding="utf-8"))
-
-    conn = _open_db(args.db)
-    for row in payload:
-        conn.execute(
-            """INSERT OR REPLACE INTO articles
-               (article_id, source, url, canonical_url, title, published_at, lang, license,
-                content_sha1, simhash, raw_path, markdown_path, word_count, fetched_at, duplicate_of)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?, '')""",
-            (
-                row["article_id"], row["source"], row.get("url", ""), row.get("canonical_url", ""),
-                row.get("title", ""), row.get("published_at", ""), row.get("lang", "en"),
-                row.get("license", ""), row.get("content_sha1", ""), str(row.get("simhash", 0)),
-                row.get("raw_path", ""), row.get("markdown_path", ""),
-                row.get("word_count", 0), row.get("fetched_at", ""),
-            ),
-        )
-    conn.commit()
-    conn.close()
-    print(f"[import-corpus] 导入 {len(payload)} 篇")
-    return 0
-
-
 def cmd_renormalize(args) -> int:
     """按当前别名表重写库里的实体名，不重新调用抽取器。
 
@@ -275,13 +179,17 @@ def cmd_reset(args) -> int:
 
 
 def cmd_demo(args) -> int:
-    """一键跑通全链路：样例源 → 规则抽取 → 导出 → 统计 → 评估 → 报告。"""
+    """端到端演示：样例源 → KGGen 抽取 → 统计 → 导出。
+
+    样例是本地合成新闻（`data/fixtures`），不需要联网抓取；但抽取仍要调用模型端点，
+    所以这个命令**不是离线命令**——没有 API key 时会在 build 阶段报错退出。
+    """
     config.ensure_dirs()
     db_path = Path(args.db) if args.db else (config.OUT / "demo.sqlite3")
     conn = store.connect(db_path)
 
     print("=" * 62)
-    print("离线演示：不联网、不需要 API key")
+    print("演示语料：data/fixtures（8 篇合成新闻，不联网抓取）")
     print("=" * 62)
 
     reset(conn)
@@ -289,9 +197,9 @@ def cmd_demo(args) -> int:
 
     print()
     print("=" * 62)
-    print(f"抽取后端：{args.backend}")
+    print("抽取后端：KGGen")
     print("=" * 62)
-    total = build_graph(conn, build_extractor(args.backend))
+    total = build_graph(conn, build_extractor())
     print(f"[build] 共写入 {total} 条三元组")
 
     stats = store.stats(conn)
@@ -304,30 +212,8 @@ def cmd_demo(args) -> int:
     print(f"[export] {config.OUT / 'graph.json'}")
     print(f"[export] {config.OUT / 'graph.cypher'}")
     print(f"[export] {config.OUT / 'graph.graphml'}")
-
-    gold_path = config.GOLD / "fixtures.csv"
-    evaluation = None
-    if gold_path.exists():
-        evaluation = evaluate_mod.evaluate_extractor(
-            conn, evaluate_mod.load_gold(gold_path), args.backend
-        )
-        print()
-        print(
-            f"[eval] strict P={evaluation['strict']['precision']:.2%} "
-            f"R={evaluation['strict']['recall']:.2%} F1={evaluation['strict']['f1']:.2%}  "
-            f"(gold={evaluation['gold_total']})"
-        )
-
-    report = evaluate_mod.write_report(
-        stats,
-        evaluation,
-        config.OUT / "report.md",
-        {"generated_at": _now(), "backend": args.backend},
-    )
-    print(f"[report] {report}")
     conn.close()
     return 0
-
 
 def _add_db_option(parser: argparse.ArgumentParser) -> None:
     """让 --db 既能写在子命令前，也能写在子命令后。"""
@@ -352,9 +238,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--source",
         default="fixtures",
         help=(
-            "新闻源（默认 fixtures，离线可跑）。科技源有 techcrunch / verge / mittr / wired / ieee / "
-            "qbitai / solidot / ithome / ifanr / infoq / sspai，"
-            "逗号分隔可同时跑多个，预设 tech（全部科技源）/ tech-en / tech-zh / all（含国际综合源）"
+            "新闻源（默认 fixtures 样例）。科技源有 xinhua_tech / stdaily / chinanews_fin / chinanews_top / "
+            "zqrb / jiemian / eeo / tmtpost / leiphone / infoq / ifanr，"
+            "逗号分隔可同时跑多个，预设 tech（全部 11 个）/ tech-off（权威 7 个）/ tech-media（垂媒 4 个）/ all"
         ),
     )
     p.add_argument("--query", help="检索词，GDELT/RSS 需要在标题里匹配")
@@ -394,9 +280,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_fetch)
 
-    p = sub.add_parser("build", help="抽三元组建图")
+    p = sub.add_parser("build", help="用 KGGen 抽三元组建图")
     _add_db_option(p)
-    p.add_argument("--backend", default="rule", choices=["rule", "llm", "kggen"])
     p.add_argument("--limit", type=int, default=None, help="最多处理多少篇")
     p.set_defaults(func=cmd_build)
 
@@ -416,29 +301,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--limit", type=int, default=200)
     p.set_defaults(func=cmd_dump)
 
-    p = sub.add_parser("eval", help="对照 gold 集评估")
-    _add_db_option(p)
-    p.add_argument("--backend", default="rule", choices=["rule", "llm", "kggen"])
-    p.add_argument("--gold", help="gold CSV 路径，默认 data/gold/fixtures.csv")
-    p.set_defaults(func=cmd_eval)
-
-    p = sub.add_parser("compare", help="三方对照实验（同一语料 + 同一 gold）")
-    _add_db_option(p)
-    p.add_argument("--backends", default="rule,llm,kggen", help="逗号分隔，例如 rule,llm")
-    p.add_argument("--gold", help="gold CSV 路径，默认 data/gold/corpus.csv")
-    p.add_argument("--limit", type=int, default=None, help="每后端最多处理多少篇")
-    p.set_defaults(func=cmd_compare)
-
-    p = sub.add_parser("export-corpus", help="导出语料清单（配合 data/md 离线重建）")
-    _add_db_option(p)
-    p.add_argument("--out", help="输出路径，默认 data/corpus/manifest.json")
-    p.set_defaults(func=cmd_export_corpus)
-
-    p = sub.add_parser("import-corpus", help="从语料清单重建文章表，不联网")
-    _add_db_option(p)
-    p.add_argument("--manifest", help="清单路径，默认 data/corpus/manifest.json")
-    p.set_defaults(func=cmd_import_corpus)
-
     p = sub.add_parser("renormalize", help="按当前别名表重写实体名（不重跑抽取）")
     _add_db_option(p)
     p.set_defaults(func=cmd_renormalize)
@@ -448,9 +310,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--keep-articles", action="store_true")
     p.set_defaults(func=cmd_reset)
 
-    p = sub.add_parser("demo", help="离线一键演示")
+    p = sub.add_parser("demo", help="端到端演示（样例语料 + KGGen，需要模型端点）")
     _add_db_option(p)
-    p.add_argument("--backend", default="rule", choices=["rule", "llm", "kggen"])
     p.set_defaults(func=cmd_demo)
 
     return parser
@@ -463,3 +324,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+

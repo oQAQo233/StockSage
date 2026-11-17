@@ -1,4 +1,4 @@
-"""全局路径与运行参数。
+﻿"""全局路径与运行参数。
 
 所有可配置项都优先读环境变量，其次用这里的默认值，
 这样命令行、.env、CI 三种场景下行为一致。
@@ -42,7 +42,8 @@ DATA = ROOT / "data"
 RAW = DATA / "raw"
 MD = DATA / "md"
 FIXTURES = DATA / "fixtures"
-GOLD = DATA / "gold"
+
+
 OUT = ROOT / "out"
 
 DB_PATH = OUT / "kg.sqlite3"
@@ -140,5 +141,6 @@ RUN = RunSettings()
 
 def ensure_dirs() -> None:
     """建好所有输出目录；重复调用无副作用。"""
-    for d in (DATA, RAW, MD, FIXTURES, GOLD, OUT):
+    for d in (DATA, RAW, MD, FIXTURES, OUT):
         d.mkdir(parents=True, exist_ok=True)
+
