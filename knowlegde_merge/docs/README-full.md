@@ -1,4 +1,4 @@
-﻿# 新闻抽取与知识图谱构建（newskg）
+# 新闻抽取与知识图谱构建（newskg）
 
 把国际与中文**科技**资讯抓下来，抽出正文并统一成 Markdown，再用三种抽取器（规则模板 / 自写 LLM prompt / KGGen）生成 `(主语, 谓词, 宾语)` 三元组，落到 SQLite 图谱，导出成 JSON / Cypher / GraphML / 可交互 HTML，最后对照人工标注的 gold 集做双口径评估。
 
@@ -637,14 +637,13 @@ set NEWSKG_LLM_MODEL=qwen2.5:14b
 | --- | --- | --- |
 | `corpus.sqlite3` | `import-corpus` + `compare` | 32 篇英文语料 + 三个后端共 1358 条三元组实例 |
 | `cn_gold.sqlite3` | `cn-finance` 抓取 + `compare`（历史） | 73 篇中文快讯，`llm` 89 条 / `rule` 4 条 |
-| `tech.sqlite3` | `fetch --source tech` | 改造前的中英混跑语料（24 篇，已改名为 `.tmp/tech_v1.sqlite3`） |
-| `tech.sqlite3` | `fetch --source tech` | 20 篇纯中文科技新闻（9 个源，权威优先集合） |
+| `tech.sqlite3` | `fetch --source tech` | 20 篇中文科技新闻（11 个源注册，其中 9 个有稿件入选） |
 | `topic_scores.json` | 打分缓存 | `sha1(标题+摘要)` → 分数/理由/模型；改阈值重跑不再付费 |
 | `demo.sqlite3` | `demo` | 8 篇样例、19 条三元组 |
 | `comparison.md` / `.csv` | `compare` | 对照总表 + 机器可读版本 |
 | `report.md` | `demo` | 自动生成的实验报告 |
 | `graph.json` / `.cypher` / `.graphml` | `export` / `demo` | 三种图格式 |
-| `graph.html` / `graph_zh.html` | `tools/view_graph.py` | 可交互图（断网可开） |
+| `graph.html` / `graph_zh.html` | `tools/view_graph.py` | pyvis 渲染的可交互图（各 ~1.4 MB，用完即弃，需要时重跑生成） |
 | `timing.json` | `compare` | 各后端首次真实耗时 |
 | `*.log` | 手工重定向 | KGGen / LLM 跑批日志 |
 
