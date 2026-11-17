@@ -62,7 +62,10 @@ def process_stub(stub: ArticleStub, limiter: RateLimiter | None = None) -> Artic
     if not ext.body_text and not ext.body_markdown:
         raise ValueError("正文抽取结果为空（可能是付费墙、反爬页或纯 JS 渲染）")
 
-    title = (ext.title or stub.title or "").strip() or "(untitled)"
+    # 标题优先用源站 RSS/API 给的那条：它是编辑写好的完整标题。
+    # 反例就在 Solidot——页面 <title> 只有「奇客Solidot」这个站点名，
+    # 用 trafilatura 的元数据会把它当标题，两篇不同文章于是同名，入库后无法区分。
+    title = (stub.title or ext.title or "").strip() or "(untitled)"
     published = ext.published_at or stub.published_at or ""
     body_text = ext.body_text or ext.body_markdown
 

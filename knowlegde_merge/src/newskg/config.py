@@ -78,6 +78,50 @@ class LLMSettings:
 
 
 @dataclass
+class TopicSettings:
+    """科技相关性打分的模型配置（与抽取用的 LLM 相互独立）。
+
+    两者独立是有意的：筛选用便宜的小模型就够（判定「是不是科技新闻」），
+    抽三元组要用更强的模型（要遵守谓词表、要给出 O 的粒度）。分开配，
+    换其中一边不会把另一边带崩。
+
+    解析顺序：
+    * 只要设置了任意一个 NEWSKG_TOPIC_*（URL / KEY / MODEL 之一），就完全独立配置，
+      模型缺省为 qwen3.8-flash；
+    * 一个都没设，则整体沿用 NEWSKG_LLM_*（适合只有一个 key 的场景）。
+    """
+
+    base_url: str = os.getenv("NEWSKG_TOPIC_BASE_URL", "")
+    api_key: str = os.getenv("NEWSKG_TOPIC_API_KEY", "")
+    model: str = os.getenv("NEWSKG_TOPIC_MODEL", "")
+    threshold: float = float(os.getenv("NEWSKG_TOPIC_THRESHOLD", "6"))
+    timeout: int = int(os.getenv("NEWSKG_TOPIC_TIMEOUT", "60"))
+    batch_size: int = int(os.getenv("NEWSKG_TOPIC_BATCH", "20"))
+    cache_path: Path = Path(
+        os.getenv("NEWSKG_TOPIC_CACHE", str(OUT / "topic_scores.json"))
+    )
+    #: 判定是否「显式配置」过：只有 CACHE 不算，它不影响端点选择
+    explicit: bool = field(
+        default_factory=lambda: any(
+            os.getenv(f"NEWSKG_TOPIC_{suffix}")
+            for suffix in ("BASE_URL", "API_KEY", "MODEL")
+        )
+    )
+
+    def __post_init__(self) -> None:
+        if not self.explicit:
+            self.base_url = LLM.base_url
+            self.api_key = LLM.api_key
+            self.model = LLM.model
+            return
+        self.model = self.model or "qwen3.8-flash"
+
+    @property
+    def configured(self) -> bool:
+        return bool(self.api_key and self.base_url)
+
+
+@dataclass
 class RunSettings:
     max_articles: int = int(os.getenv("NEWSKG_MAX_ARTICLES", "30"))
     window_days: int = int(os.getenv("NEWSKG_WINDOW_DAYS", "2"))
@@ -90,6 +134,7 @@ class RunSettings:
 
 
 LLM = LLMSettings()
+TOPIC = TopicSettings()
 RUN = RunSettings()
 
 

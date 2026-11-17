@@ -56,12 +56,15 @@ def cmd_init(args) -> int:
 def cmd_fetch(args) -> int:
     config.ensure_dirs()
     source = build_source(args.source)
-    # 两道过滤都放在发现层：先按发布时间卡窗口，再按主题筛股票相关。
+    # 两道过滤都放在发现层：先按发布时间卡窗口，再用 LLM 给科技相关性打分并卡阈值。
     # 下游（抓取 → 转换 → 抽取 → 入库）拿到的仍是普通 ArticleStub，完全无感。
     source = FilteredSource(
         source,
         topic=args.topic,
         keep_undated=args.keep_undated,
+        threshold=args.topic_threshold,
+        mode=args.topic_mode,
+        desc=args.topic_desc,
     )
     conn = _open_db(args.db)
     ingest(source, args.query, args.limit, args.days, conn)
@@ -310,9 +313,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--source",
         default="fixtures",
         help=(
-            "新闻源（默认 fixtures，离线可跑）。可用：fixtures / rss / gdelt / guardian / "
-            "eastmoney-rss / eastmoney / ths / sina-fin，"
-            "逗号分隔可同时跑多个，预设 cn-finance（中文财经四源）或 all（全部网络源）"
+            "新闻源（默认 fixtures，离线可跑）。科技源有 techcrunch / verge / mittr / wired / ieee / "
+            "qbitai / solidot / ithome / ifanr / infoq / sspai，"
+            "逗号分隔可同时跑多个，预设 tech（全部科技源）/ tech-en / tech-zh / all（含国际综合源）"
         ),
     )
     p.add_argument("--query", help="检索词，GDELT/RSS 需要在标题里匹配")
@@ -325,8 +328,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--topic",
+        default="tech",
+        help="题材过滤：tech（LLM 打分筛科技新闻，默认）/ none（不过滤）",
+    )
+    p.add_argument(
+        "--topic-threshold",
+        type=float,
         default=None,
-        help="主题过滤：stock（只保留与中国股票相关的新闻），留空不过滤",
+        help="科技相关性阈值，0-10，默认取 NEWSKG_TOPIC_THRESHOLD（6）",
+    )
+    p.add_argument(
+        "--topic-mode",
+        default="auto",
+        choices=["auto", "llm", "keyword"],
+        help="auto=有 key 用模型、没有则关键词降级；llm=强制模型（缺配置报错）；keyword=强制关键词",
+    )
+    p.add_argument(
+        "--topic-desc",
+        default="",
+        help="自定义领域描述，追加进打分的提示词（默认内置「科技」定义）",
     )
     p.add_argument(
         "--keep-undated",

@@ -3,21 +3,32 @@
 每个源只需要实现 discover()，返回 ArticleStub 列表；
 「怎么抓正文」「怎么转格式」由上层统一处理，源之间不重复实现。
 
+题材已从「中国股票」换成「科技」，所以这里的默认集合是 11 个科技源
+（英文 5 + 中文 6），中文财经四源已移除（历史实现见 git 记录）。
+
 `--source` 支持三种写法：
-- 单个源：`--source eastmoney`
-- 逗号分隔：`--source eastmoney,ths`
-- 预设：`--source cn-finance`（中文财经四源合集）/ `--source all`（全部网络源）
+- 单个源：`--source techcrunch`
+- 逗号分隔：`--source techcrunch,verge`
+- 预设：`--source tech`（全部科技源）/ `tech-en` / `tech-zh` / `all`（连国际源一起）
 """
 
 from __future__ import annotations
 
 from .base import Source
-from .cn_finance import EastmoneyNews, EastmoneyRss, SinaFinance, ThsNews
-from .filters import FilteredSource, is_stock_related, within_window
+from .filters import FilteredSource, keyword_score, within_window
 from .fixtures import FixtureSource
 from .gdelt import GdeltSource
 from .guardian import GuardianSource
 from .rss import RssSource
+from .tech import (  # noqa: F401
+    EN_NAMES,
+    FEEDS,
+    ZH_NAMES,
+    TechFeed,
+    make_default_preset,
+    make_preset,
+    make_single,
+)
 
 __all__ = [
     "Source",
@@ -25,36 +36,36 @@ __all__ = [
     "GdeltSource",
     "GuardianSource",
     "RssSource",
-    "EastmoneyRss",
-    "EastmoneyNews",
-    "ThsNews",
-    "SinaFinance",
+    "TechFeed",
     "MultiSource",
     "FilteredSource",
     "build_source",
-    "is_stock_related",
+    "keyword_score",
     "within_window",
+    "FEEDS",
 ]
 
-#: 中文财经四源。按「全文文章优先」排序：东方财富 RSS 给整篇文章，
-#: 后三个给快讯/短讯，正文短，抽三元组的效果差一截。
-CN_FINANCE = ["eastmoney-rss", "eastmoney", "ths", "sina-fin"]
-
-_REGISTRY = {
-    # 国际
+#: 科技预设。`tech` 把 11 个 feed 放进**同一个适配器实例**里，
+#: 这样日志与去重都只发生一次，而不是先合并 11 个源再合并一遍。
+_REGISTRY: dict[str, object] = {
+    # 国际综合（仍然是英文新闻，可用于对照实验）
     "gdelt": GdeltSource,
     "guardian": GuardianSource,
     "rss": RssSource,
-    # 中文财经
-    "eastmoney-rss": EastmoneyRss,
-    "eastmoney": EastmoneyNews,
-    "ths": ThsNews,
-    "sina-fin": SinaFinance,
+    # 科技单源
+    **{name: make_single(name) for name in FEEDS},
+    # 科技预设
+    "tech": make_default_preset(),
+    "tech-en": make_preset("tech-en", EN_NAMES),
+    "tech-zh": make_preset("tech-zh", ZH_NAMES),
     # 离线
     "fixtures": FixtureSource,
     "fixture": FixtureSource,
     "offline": FixtureSource,
 }
+
+#: 预设展开 `all` 时包含哪些（科技合集 + 国际综合）
+ALL_PARTS = ["gdelt", "guardian", "rss", "tech"]
 
 
 class MultiSource:
@@ -108,28 +119,18 @@ def build_source(name: str, **kwargs):
 
     parts = [p.strip().lower() for p in raw.split(",") if p.strip()]
     if parts == ["all"]:
-        parts = ["gdelt", "guardian", "rss", *CN_FINANCE]
-    elif parts == ["cn-finance"] or parts == ["cn"]:
-        parts = list(CN_FINANCE)
+        parts = list(ALL_PARTS)
+
+    def make(key: str):
+        try:
+            factory = _REGISTRY[key]
+        except KeyError:
+            raise SystemExit(
+                f"未知新闻源 {key!r}，可选：{', '.join(sorted(_REGISTRY))}"
+                "，或预设 tech / tech-en / tech-zh / all"
+            ) from None
+        return factory(**kwargs) if kwargs else factory()  # type: ignore[operator]
 
     if len(parts) == 1:
-        key = parts[0]
-        try:
-            cls = _REGISTRY[key]
-        except KeyError:
-            raise SystemExit(
-                f"未知新闻源 {key!r}，可选：{', '.join(sorted(_REGISTRY))}"
-                "，或预设 cn-finance / all"
-            ) from None
-        return cls(**kwargs)
-
-    built = []
-    for key in parts:
-        try:
-            cls = _REGISTRY[key]
-        except KeyError:
-            raise SystemExit(
-                f"未知新闻源 {key!r}，可选：{', '.join(sorted(_REGISTRY))}"
-            ) from None
-        built.append(cls(**kwargs))
-    return MultiSource(built, label=",".join(parts))
+        return make(parts[0])
+    return MultiSource([make(key) for key in parts], label=",".join(parts))
