@@ -705,6 +705,7 @@ set NEWSKG_LLM_MODEL=qwen2.5:14b
 | 脚本 | 用途 |
 | --- | --- |
 | `view_graph.py` | 渲染可交互 `graph.html`：`--db` `--extractor` `--out` `--limit` `--min-degree`（需 `PYTHONPATH=src;.kgvenv`） |
+| `view_graph_lite.py` | **零依赖**版查看器，主环境直接跑：按连通分量做径向布局再货架排布，产出单文件 HTML（悬停看关系、滚轮缩放、拖节点）。`--min-degree 2` 可只看多文章共现的核心子图 |
 | `provenance.py` | 三层溯源：三元组 → 文章行 → 原文 URL / HTML 快照 / 具体句子。用法 `--db out\cn_gold.sqlite3 --subject 超聚变`，或 `--s 侨源股份 --p 签订` |
 | `progress.py` | 看各抽取器处理了多少篇、产出多少条（读 `runs` 台账） |
 | `dump_triples.py` | 连文章标题一起打印三元组 |
