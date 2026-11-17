@@ -1,4 +1,4 @@
-"""新闻源适配器。
+﻿"""新闻源适配器。
 
 每个源只需要实现 discover()，返回 ArticleStub 列表；
 「怎么抓正文」「怎么转格式」由上层统一处理，源之间不重复实现。
@@ -23,6 +23,7 @@ from .gdelt import GdeltSource
 from .guardian import GuardianSource
 from .rss import RssSource
 from .tech import (  # noqa: F401
+    ALL_KEYS,
     EN_NAMES,
     FEEDS,
     PRESETS,
@@ -56,7 +57,7 @@ _REGISTRY: dict[str, object] = {
     "guardian": GuardianSource,
     "rss": RssSource,
     # 科技单源
-    **{name: make_single(name) for name in FEEDS},
+    **{name: make_single(name) for name in ALL_KEYS},
     # 科技预设
     "tech": make_default_preset(),
     "tech-off": make_preset("tech-off", PRESETS["tech-off"]),
@@ -130,7 +131,7 @@ def build_source(name: str, **kwargs):
         except KeyError:
             raise SystemExit(
                 f"未知新闻源 {key!r}，可选：{', '.join(sorted(_REGISTRY))}"
-                "，或预设 tech / tech-en / tech-zh / all"
+                "，或预设 tech / tech-off / tech-media / all"
             ) from None
         return factory(**kwargs) if kwargs else factory()  # type: ignore[operator]
 

@@ -211,13 +211,47 @@ class FilteredSource:
         return self._apply_topic(kept_time, limit)
 
     # ------------------------------------------------------------------ 题材
+    @staticmethod
+    def _fair_pool(candidates: list[ArticleStub], cap: int) -> list[ArticleStub]:
+        """按源轮流取满 cap 条，而不是直接截前 cap 条。
+
+        候选池是按发布时间倒序的，而「列表页源」（新华网、科技日报）的条目只有日期、
+        没有具体时刻，折算成 UTC 后必然排在当天最后——纯时间序截断会让这些源一条都
+        进不了打分池，加了等于没加。轮流取保证每个源先各出 1 条，再各出第 2 条……
+        取完之后仍按时间倒序交回去，输出顺序与原来一致。
+        """
+        if len(candidates) <= cap:
+            return list(candidates)
+
+        by_source: dict[str, list[ArticleStub]] = {}
+        for stub in candidates:
+            by_source.setdefault(stub.source or "", []).append(stub)
+
+        pool: list[ArticleStub] = []
+        depth = 0
+        while len(pool) < cap:
+            picked_any = False
+            for bucket in by_source.values():
+                if depth < len(bucket) and len(pool) < cap:
+                    pool.append(bucket[depth])
+                    picked_any = True
+            if not picked_any:
+                break
+            depth += 1
+
+        pool.sort(key=lambda s: s.published_at or "", reverse=True)
+        return pool
+
     def _apply_topic(self, candidates: list[ArticleStub], limit: int) -> list[ArticleStub]:
         if not candidates:
             return []
 
-        pool = candidates[:MAX_SCORED]
+        pool = self._fair_pool(candidates, MAX_SCORED)
         if len(candidates) > MAX_SCORED:
-            print(f"[topic] 候选 {len(candidates)} 条，只给前 {MAX_SCORED} 条打分（控制成本）")
+            print(
+                f"[topic] 候选 {len(candidates)} 条，按源轮流取前 {MAX_SCORED} 条打分"
+                f"（{len({s.source for s in pool})} 个源，控制成本）"
+            )
 
         scores = self._score(pool)
 
