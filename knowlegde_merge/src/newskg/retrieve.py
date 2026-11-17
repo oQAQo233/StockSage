@@ -1,4 +1,4 @@
-"""查询检索：把一段自然语言查询变成"相关报道 + 相关事实"。
+﻿"""查询检索：把一段自然语言查询变成"相关报道 + 相关事实"。
 
 分三步，每步都只做一件事：
 
@@ -20,6 +20,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import events as events_mod
 from . import textindex
 from .kg.entities import ALIAS_PATH
 
@@ -59,6 +60,7 @@ class Candidate:
     published_at: str
     url: str
     markdown_path: str
+    simhash: str = ""
     score: float = 0.0
     graph_hits: list[str] = field(default_factory=list)   # 命中的实体
     text_hits: int = 0                                    # 文本路命中的段落数
@@ -116,6 +118,7 @@ def link_entities(
       3. 模糊：编辑距离 ≥0.82 的兜底，处理错字/简称
     """
     q = query.lower()
+    ascii_tokens = set(re.findall(r"[a-z0-9]+", q))
     hits: dict[str, EntityHit] = {}
 
     for canonical, names in aliases.items():
@@ -143,8 +146,16 @@ def link_entities(
     for name in table:
         if name in hits or len(name) < 3 or name in GENERIC_ENTITIES:
             continue
-        for length in range(min(len(name), 6), 2, -1):
-            if name[:length] in q:
+        lowered = name.lower()
+        if lowered.isascii():
+            # 英文实体按"首词出现在查询的词表里"判断：Northwind Airlines 对
+            # northwind 命中；同时不会因为 "sun" 是 "sunbelt" 的前缀而链上 Sunday。
+            head = re.split(r"[^a-z0-9]+", lowered)[0]
+            if len(head) >= 3 and head in ascii_tokens:
+                hits[name] = EntityHit(name, "partial", 0.6)
+            continue
+        for length in range(min(len(lowered), 6), 2, -1):
+            if lowered[:length] in q:
                 hits[name] = EntityHit(name, "partial", round(0.5 + 0.02 * length, 3))
                 break
 
@@ -164,13 +175,28 @@ def link_entities(
     return ordered[:limit]
 
 
+def _article_entities(conn, article_ids: list[str]) -> dict[str, set[str]]:
+    """每篇文章抽出来的主体/客体，用来判断"两篇报道是不是同一件事"。"""
+    if not article_ids:
+        return {}
+    marks = ",".join("?" * len(article_ids))
+    rows = conn.execute(
+        f"SELECT article_id, subject, object FROM triples WHERE article_id IN ({marks})",
+        article_ids,
+    ).fetchall()
+    out: dict[str, set[str]] = {aid: set() for aid in article_ids}
+    for row in rows:
+        out[row["article_id"]].update({row["subject"], row["object"]})
+    return out
+
+
 def _article_meta(conn, article_ids: list[str]) -> dict[str, dict]:
     if not article_ids:
         return {}
     marks = ",".join("?" * len(article_ids))
     rows = conn.execute(
         f"""
-        SELECT article_id, title, source, published_at, url, markdown_path
+        SELECT article_id, title, source, published_at, url, markdown_path, simhash
         FROM articles WHERE article_id IN ({marks})
         """,
         article_ids,
@@ -183,6 +209,7 @@ def _article_meta(conn, article_ids: list[str]) -> dict[str, dict]:
             "published_at": r["published_at"] or "",
             "url": r["url"] or "",
             "markdown_path": r["markdown_path"] or "",
+            "simhash": r["simhash"] or "",
         }
         for r in rows
     }
@@ -349,8 +376,17 @@ def retrieve(
         print(f"  [graph] {len(g_edges)} 条边 / {len(g_score)} 篇｜[text] {len(t_score)} 篇")
         print(f"  [fuse] 入选 {len(candidates)} 篇")
 
+    # 事件聚类：同一件事的多篇报道合成一簇，报告里只写一次、并列来源。
+    art_entities = _article_entities(conn, [c.article_id for c in candidates])
+    event_list = events_mod.cluster([c.__dict__ for c in candidates], art_entities)
+
+    if verbose and event_list:
+        multi = sum(1 for e in event_list if e["size"] > 1)
+        print(f"  [events] {len(event_list)} 个事件（{multi} 个多源）")
+
     return {
         "query": query,
+        "events": event_list,
         "seeds": [{"name": h.name, "via": h.via, "weight": h.weight} for h in seeds],
         "time_window": window,
         "hops": hops,
@@ -418,6 +454,12 @@ __all__ = [
     "retrieve",
     "save_evidence",
 ]
+
+
+
+
+
+
 
 
 

@@ -232,8 +232,11 @@ def search(
     hits: list[ParaHit] = []
     for (article_id, idx), text in candidates.items():
         score = 0.0
+        # ASCII 词要按小写比对：查询侧已小写，正文是原样（"Northwind"）。
+        # 中文没有大小写，这一步不产生影响。
+        lowered = text.lower()
         for term in terms:
-            cnt = text.count(term)
+            cnt = lowered.count(term)
             if cnt:
                 # 2 字词权重 1，3 字 1.5，4 字 2……长词更具体，也更可信
                 score += (len(term) / 2.0) * min(cnt, 3)
@@ -252,4 +255,5 @@ def stats(conn: sqlite3.Connection) -> dict:
         ).fetchone()[0],
         "paragraphs": _count(conn),
     }
+
 

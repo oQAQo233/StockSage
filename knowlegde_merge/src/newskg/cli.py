@@ -1,4 +1,4 @@
-"""命令行入口。
+﻿"""命令行入口。
 
     python -m newskg.cli demo
     python -m newskg.cli fetch --source tech --limit 20
@@ -262,12 +262,13 @@ def cmd_ask(args) -> int:
     out.write_text(md, encoding="utf-8")
 
     print(f"[report] {out}")
-    if stats.get("summary"):
-        s = stats["summary"]
-        if s.get("fallback"):
-            print("  [summary] 规则摘要（未调用模型）")
-        else:
-            print(f"  [summary] 引用 {s['cited']} 处，无引用的句子 {s['uncited']} 句")
+    for sid, s in (stats.get("sections") or {}).items():
+        line = f"  [{sid}] 引用 {s['cited']} 处，无引用的句子 {s['uncited']} 句"
+        if s["out_of_range"]:
+            line += f"，越界引用 {s['out_of_range']}"
+        if s["unsupported"]:
+            line += f"，证据里没有的数字 {s['unsupported']}"
+        print(line)
     conn.close()
     return 0
 
@@ -393,5 +394,6 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 
 
