@@ -45,6 +45,8 @@ FIXTURES = DATA / "fixtures"
 
 
 OUT = ROOT / "out"
+REPORTS = OUT / "reports"
+CONFIGS = ROOT / "configs"
 
 DB_PATH = OUT / "kg.sqlite3"
 
@@ -141,6 +143,7 @@ RUN = RunSettings()
 
 def ensure_dirs() -> None:
     """建好所有输出目录；重复调用无副作用。"""
-    for d in (DATA, RAW, MD, FIXTURES, OUT):
+    for d in (DATA, RAW, MD, FIXTURES, OUT, REPORTS):
         d.mkdir(parents=True, exist_ok=True)
+
 

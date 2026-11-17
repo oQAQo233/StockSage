@@ -1,0 +1,60 @@
+{
+  "_comment": "报告结构配置。改标题/顺序/字数只改这里，不需要动代码。M1 只实现 top_facts 与 sources_all 两个选择器，其余 enabled=false。",
+  "mode": "fixed",
+  "total_words": 4000,
+  "sections": [
+    {
+      "id": "summary",
+      "title": "摘要",
+      "words": 320,
+      "selector": "top_facts",
+      "cite": true,
+      "enabled": true,
+      "locked": true
+    },
+    {
+      "id": "background",
+      "title": "背景与现状",
+      "words": 700,
+      "selector": "text_hits",
+      "cite": true,
+      "enabled": false,
+      "_note": "M2：用文本路命中的段落写背景"
+    },
+    {
+      "id": "players",
+      "title": "关键主体与事件",
+      "words": 900,
+      "selector": "graph_clusters",
+      "cite": true,
+      "enabled": false,
+      "_note": "M2：按实体簇组织图路事实，依赖事件聚类"
+    },
+    {
+      "id": "timeline",
+      "title": "时间线",
+      "words": 600,
+      "selector": "chrono",
+      "cite": true,
+      "enabled": false,
+      "_note": "M2：按 published_at 排序，同事件先合并"
+    },
+    {
+      "id": "outlook",
+      "title": "趋势与不确定性",
+      "words": 500,
+      "selector": "text_hits",
+      "cite": false,
+      "enabled": false,
+      "_note": "M2：推断节，禁止带引用，单独标注"
+    },
+    {
+      "id": "sources",
+      "title": "来源",
+      "selector": "sources_all",
+      "cite": false,
+      "enabled": true,
+      "locked": true
+    }
+  ]
+}
