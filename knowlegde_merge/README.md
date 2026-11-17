@@ -2,7 +2,7 @@
 
 把国际与中文**科技**资讯抓下来，抽出正文并统一成 Markdown，再用三种抽取器（规则模板 / 自写 LLM prompt / KGGen）生成 `(主语, 谓词, 宾语)` 三元组，落到 SQLite 图谱，导出成 JSON / Cypher / GraphML / 可交互 HTML，最后对照人工标注的 gold 集做双口径评估。
 
-> **题材已从「中国股票」收敛到「科技」**（2026-11）。不是放弃股票方向，而是先在一个领域把「抓得准、抽得稳」做扎实：科技报道的信息密度高、实体明确（公司/产品/技术/机构）、跨中英文都好判定相关性，比「A 股快讯」更适合作为知识图谱的语料。筛选机制同时从「关键词打分」换成了「LLM 打分 + 阈值」，见 §3.3。历史的中文财经四源仍在 git 记录里。
+> **题材已从「中国股票」收敛到「科技」**（2026-11）。不是放弃股票方向，而是先在一个领域把「抓得准、抽得稳」做扎实：科技报道的信息密度高、实体明确（公司/产品/技术/机构）、相关性好判定，比「A 股快讯」更适合作为知识图谱的语料。同一时间语料从**中英混跑收敛到纯中文**（英文源全部移除，见 §5.2），筛选机制从「关键词打分」换成「LLM 打分 + 阈值」，见 §3.3。历史的中文财经四源仍在 git 记录里。
 
 - **不需要联网也能跑通全链路**：`run.cmd demo` 用 8 篇合成样例、0 个 API key，约 3.5 秒产出一份完整报告。
 - **三种抽取器的结果落在同一张表**（`triples.extractor` 区分），可以直接横向对照。
@@ -142,7 +142,7 @@ knowlegde_merge/
 │  ├─ cli.py                命令行：12 个子命令，argparse 分发
 │  ├─ config.py             路径、限速、去重阈值、.env 加载
 │  ├─ models.py             ArticleStub / Article / Triple
-│  ├─ sources/              发现层：11 个科技源 + 预设 + 两道过滤
+│  ├─ sources/              发现层：12 个中文科技源 + 预设 + 两道过滤
 │  │   ├─ base.py           Source 协议、带退避的 http_get、按域名限速
 │  │   ├─ gdelt.py guardian.py rss.py fixtures.py
 │  │   ├─ tech.py           科技 11 源（5 英 + 6 中）的通用 RSS 适配器 + 预设
@@ -179,7 +179,7 @@ knowlegde_merge/
 
 ```
                     ┌──────────────── src/newskg/sources ────────────────┐
-  fetch  ────────►  │ techcrunch / verge / qbitai / ithome / …（11 个科技源）│
+  fetch  ────────►  │ chinanews / eeo / jiemian / qbitai / ithome / …（12 个中文源）│
                     │   └─ FilteredSource：① 时间窗  ② LLM 科技相关性打分 │
                     └───────────────┬────────────────────────────────────┘
                                     │ list[ArticleStub]  ← 只有 URL + 元数据
@@ -213,7 +213,7 @@ knowlegde_merge/
 
 | 步骤 | 代码 | 说明 |
 | --- | --- | --- |
-| 解析源名 | `build_source(name)` | 支持单个源、逗号分隔、预设 `tech` / `tech-en` / `tech-zh` / `all`；名字大小写不敏感 |
+| 解析源名 | `build_source(name)` | 支持单个源、逗号分隔、预设 `tech` / `tech-off` / `tech-media` / `all`；名字大小写不敏感 |
 | 合并多源 | `TechFeed.discover` | 每个 feed 各取 `ceil(limit/n)+2` 条（封顶 40），按 URL 去重，再按发布时间倒序合并 |
 | 过滤 | `FilteredSource.discover` | 先向底层多要 4 倍候选（送打分最多 60 条），依次过时间窗、题材打分，最后截到 `limit` |
 
@@ -411,13 +411,16 @@ $env:PYTHONPATH="src"
 ### 常用组合
 
 ```bat
-:: 1. 抓 20 篇科技新闻（11 个源自动分额，LLM 打分卡 ≥6），再建图
+:: 1. 抓 20 篇中文科技新闻（12 个源自动分额，LLM 打分卡 ≥6），再建图
 .\run.cmd fetch --source tech --limit 20 --days 3 --db out\tech.sqlite3
 .\run.cmd --db out\tech.sqlite3 build --backend llm
 .\run.cmd --db out\tech.sqlite3 export --format all
 
-:: 2. 只盯中文科技源，阈值推到 7（更严），每周跑
-.\run.cmd fetch --source tech-zh --limit 15 --days 7 --topic-threshold 7 --db out\tech_zh.sqlite3
+:: 2. 只要官方/报社四源（中新网·财经、中新网·要闻、经观、界面），阈值推到 7（更严）
+.\run.cmd fetch --source tech-off --limit 15 --days 7 --topic-threshold 7 --db out\tech_off.sqlite3
+
+:: 2b. 只要科技垂媒八源（量子位、Solidot、IT之家、爱范儿、InfoQ、少数派、钛媒体、雷锋网）
+.\run.cmd fetch --source tech-media --limit 15 --days 7 --db out\tech_media.sqlite3
 
 :: 3. 阈值敏感性：同一批候选不重复付费（有缓存），只花在跨阈值的新条目上
 .\run.cmd fetch --source tech --limit 20 --days 3 --topic-threshold 5 --db out\t5.sqlite3
@@ -435,21 +438,22 @@ $env:PYTHONPATH="src"
 
 ## 5. 新闻源
 
-`--source` 支持单个源、逗号分隔、预设名。科技源（11 个，全部免 key）：
+`--source` 支持单个源、逗号分隔、预设名。科技源（12 个，**全部中文**、全部免 key）：
 
-| 源 | 语种 | 站点 | 实测 |
+| 源 | 站点 | 性质 | 实测 |
 | --- | --- | --- | --- |
-| `techcrunch` | en | TechCrunch | 20 条/次，正文 ~1300 字符 |
-| `verge` | en | The Verge | 10 条/次（Atom） |
-| `mittr` | en | MIT Technology Review | 10 条/次，正文 ~5400 字符（质量最好） |
-| `wired` | en | WIRED | 50 条/次 |
-| `ieee` | en | IEEE Spectrum | 30 条/次，正文 ~21000 字符（长文多） |
-| `qbitai` | zh | 量子位 | 10 条/次，AI 垂直 |
-| `solidot` | zh | Solidot | 20 条/次，短文（~430 字符，适合抽三元组） |
-| `ithome` | zh | IT之家 | 60 条/次，消费电子为主 |
-| `ifanr` | zh | 爱范儿 | 20 条/次，正文 ~8400 字符 |
-| `infoq` | zh | InfoQ 中文 | 20 条/次，工程/架构为主 |
-| `sspai` | zh | 少数派 | 10 条/次，数字生活 |
+| `chinanews_fin` | 中新网·财经 | 通讯社（中国新闻社） | 30 条/次，全带 `pubDate`，科技/产业稿多（超算、芯片、制造业） |
+| `chinanews_top` | 中新网·要闻 | 通讯社 | 30 条/次，全带时间，政策/部委动态为主 |
+| `eeo` | 经济观察报 | 报社（经济日报集团） | 4 条/次，全带时间，更新最快 |
+| `jiemian` | 界面新闻 | 报社（上海报业） | 30 条/次，全带时间，商业/科技 |
+| `qbitai` | 量子位 | AI 垂直 | 10 条/次 |
+| `solidot` | Solidot | 科技社区媒体 | 20 条/次，短文（~430 字符） |
+| `ithome` | IT之家 | 消费电子 | 60 条/次，出稿最密 |
+| `ifanr` | 爱范儿 | 科技媒体 | 20 条/次，正文 ~8400 字符 |
+| `infoq` | InfoQ 中文 | 工程/架构 | 20 条/次 |
+| `sspai` | 少数派 | 数字生活 | 10 条/次 |
+| `tmtpost` | 钛媒体 | 科技商业 | 20 条/次，全带时间，深度稿多（2700–3400 字符） |
+| `leiphone` | 雷锋网 | 科技垂直 | 20 条/次，全带时间，AI/机器人/车 |
 
 非科技源仍在，用于对照实验与补漏：
 
@@ -460,24 +464,44 @@ $env:PYTHONPATH="src"
 | `gdelt` | 否 | 250 条 URL/次，15 分钟更新，65 语种 |
 | `guardian` | 是（免费） | 全文 + 元数据，500 次/天 |
 
-预设：`tech`（= 上表 11 个）、`tech-en`（英文 5 个）、`tech-zh`（中文 6 个）、`all`（= `gdelt,guardian,rss,tech`）。`NEWSKG_TECH_FEEDS` 可覆盖 `tech` 的成员。
+预设：`tech`（= 上表 12 个）、`tech-off`（官方 4 个）、`tech-media`（垂媒 8 个）、`all`（= `gdelt,guardian,rss,tech`）。`NEWSKG_TECH_FEEDS` 可覆盖 `tech` 的成员。
 
-**科技源是逐个实测筛出来的**（2026-11）。判据不是「RSS 能解析」，而是「能解析**且**首条正文能被 trafilatura 抽出 >400 字符」——只过前者会在抓取层全军覆没。被淘汰的：
+**英文源已全部移除**（2026-11）：`techcrunch` / `verge` / `mittr` / `wired` / `ieee` 连同 `tech-en` 预设一起删掉，理由见下节「为什么砍掉英文源」。
+
+### 5.1 源是怎么筛的
+
+判据是**三条**，不是「RSS 地址能打开」：
+
+1. `feedparser` 能解析出条目；
+2. **条目带 `pubDate`**——没有时间标签，`--days` 时间窗会静默失效，等于把时间过滤关掉；
+3. 首条正文能被 trafilatura 抽出 **>400 字符**。
+
+第 2 条是这一轮新增的硬门槛，也是淘汰率最高的一条。被淘汰的候选（2026-11 实测）：
 
 | 候选 | 现象 |
 | --- | --- |
-| `arstechnica` | feed 正常（20 条），但正文页返回 **HTTP 405** |
-| `engadget` | feed 返回 **202**（反爬挑战） |
-| `venturebeat` | feed 返回 **429** |
-| `theregister` | 200 但返回 HTML，不是 feed |
-| `jiqizhixin` / `36kr` / `cnbeta` | 200 但返回 HTML（原 RSS 已下线） |
-| `hnrss` | feed 正常，但条目多指向抓不到正文的站点（ConnectionError） |
+| 新华网·科技 | 300 条/次，**零条带时间**（全站 RSS 都不给 `pubDate`） |
+| 人民网·IT / 科技 | 100 条且都有日期，但**最新一条停在 2024-07 / 2025-04**（feed 已死） |
+| 中国政府网 | 60 条全带时间，但正文页只抽出 **56 字符**（推送的是条例标题） |
+| 科技日报 / 中国科学报 / 央视网 / 光明网 / 第一财经 / 中国网 / 环球网 | RSS 端点 **404**（未提供或已下线） |
+| 科学网 / 澎湃 / 观察者网 / 机工社系 / 品玩 | 返回 HTML 而非 feed |
+| 36氪 / 机器之心 / 腾讯科技 | 同上，`/feed` 已改成前端渲染 |
+| 新浪·科技 | 有日期但**停在 2018 年** |
+| 搜狐·IT | 有日期但**停在 2016 年** |
+
+### 5.2 为什么砍掉英文源
+
+1. **口径统一**：题目要的是中文科技新闻；中英混在同一张图里，实体名一半中文一半英文，`Capcom`/`卡普空` 这类问题只能靠别名表打补丁，不如源头上统一。
+2. **时间标签**：英文源（TechCrunch/WIRED 等）本身没问题，但它们的价值在「深度长文」，而中文源在「多源互证」。两者混跑时，英文长文在 20 篇配额里只占 2–3 篇，性价比最低。
+3. **可复现性**：英文源大量走 Cloudflare（403/429 波动），中文源这一轮的稳定性明显更好（20/20 抓取成功，0 失败）。
+
+代价也要说清楚：**中文科技媒体的正文普遍更短**（IT之家 200–500 字符），抽出的三元组条数比英文深度稿少；`tmtpost` / `ifanr` / `jiemian` 是当前唯一能提供 2000+ 字符正文的中文源。
 
 已知限制：
 
-- **中文源的正文偏短**（Solidot / IT之家 ~430 字符），适合抽三元组，但不适合做长文摘要类实验；长文请用 `ieee` / `ifanr` / `infoq`。
+- **官方源不等于科技源**：`chinanews_top`、`eeo` 是综合新闻，科技命中率低。实测 60 篇候选里，官方四源贡献 30 篇，只有 9 篇过 6 分阈值——LLM 打分的价值正在这里，别指望 feed 自己分好类。
 - **消费电子 ≠ 科技产业**：`ithome` / `sspai` 里混有大量促销、早报、开箱，LLM 打分会把促销打到 3-5 分正常拦掉，但「早报」类聚合文偶尔会以 6 分通过——这类文章的实体密度低，抽出来的三元组偏碎。
-- `tech.py` 的 `per_feed` 按 feed 数摊平（`ceil(limit/n)+2`，封顶 40），保证「11 个源各出一个头条」而不是「第一个源吃掉全部额度」；入库时 `articles.source` 记的是具体 feed 名（不是预设名），所以按源统计不会被合并抹平。
+- `tech.py` 的 `per_feed` 按 feed 数摊平（`ceil(limit/n)+2`，封顶 40），保证「12 个源各出一个头条」而不是「第一个源吃掉全部额度」；入库时 `articles.source` 记的是具体 feed 名（不是预设名），所以按源统计不会被合并抹平。
 
 GDELT 按出口 IP 限流，实测会返回 `429`；`http_get` 一共尝试 3 次，失败后依次等 5 秒、10 秒再试，仍失败会给出明确提示（而不是让整轮抓取白跑）。
 
@@ -604,7 +628,8 @@ set NEWSKG_LLM_MODEL=qwen2.5:14b
 | --- | --- | --- |
 | `corpus.sqlite3` | `import-corpus` + `compare` | 32 篇英文语料 + 三个后端共 1358 条三元组实例 |
 | `cn_gold.sqlite3` | `cn-finance` 抓取 + `compare`（历史） | 73 篇中文快讯，`llm` 89 条 / `rule` 4 条 |
-| `tech.sqlite3` | `fetch --source tech` | 20 篇科技新闻（9 个源，中英 11:9） |
+| `tech.sqlite3` | `fetch --source tech` | 改造前的中英混跑语料（24 篇，已改名为 `.tmp/tech_v1.sqlite3`） |
+| `tech_zh.sqlite3` | `fetch --source tech` | 20 篇纯中文科技新闻（10 个源，2026-11 改造后） |
 | `topic_scores.json` | 打分缓存 | `sha1(标题+摘要)` → 分数/理由/模型；改阈值重跑不再付费 |
 | `demo.sqlite3` | `demo` | 8 篇样例、19 条三元组 |
 | `comparison.md` / `.csv` | `compare` | 对照总表 + 机器可读版本 |
@@ -707,7 +732,7 @@ set NEWSKG_LLM_MODEL=qwen2.5:14b
 | `NEWSKG_TOPIC_BATCH` | `20` | 一次请求打多少条 |
 | `NEWSKG_TOPIC_TIMEOUT` | `60` | 打分请求超时（秒） |
 | `NEWSKG_TOPIC_CACHE` | `out/topic_scores.json` | 打分缓存路径 |
-| `NEWSKG_TECH_FEEDS` | 空（= 全部 11 个） | 覆盖 `tech` 预设的成员，逗号分隔注册名 |
+| `NEWSKG_TECH_FEEDS` | 空（= 全部 12 个） | 覆盖 `tech` 预设的成员，逗号分隔注册名 |
 | `NEWSKG_PREDICATE_LANG` | `auto` | 谓词语言 `zh` / `en` / `auto`（按正文汉字占比判） |
 | `GUARDIAN_API_KEY` | 空 | Guardian Open Platform key |
 | `NEWSKG_RSS_FEEDS` | 空 | 覆盖默认 RSS 列表（逗号分隔） |
@@ -806,6 +831,7 @@ set NEWSKG_LLM_BASE_URL=http://127.0.0.1:8765/v1
 
 - `data/fixtures/` 全部是**合成文本**，不是真实新闻，仅用于演示。
 - `data/md/` 与 `data/raw/` 里的真实新闻版权归原站点（BBC / Al Jazeera / 东方财富 / 同花顺 / 新浪财经 / Solidot / IT之家 / 爱范儿 / TechCrunch / The Verge 等），仅为课程复现冻结在仓库内，**不得再分发**。
-- 11 个科技源都是各站点公开的 RSS/Atom，只取标题、链接与元数据；正文由本工程按 `NEWSKG_POLITE_DELAY` 礼让抓取，**不绕过任何反爬**（被 405/202/429 挡下的源直接放弃，见 §5）。
+- 12 个中文科技源都是各站点公开的 RSS/Atom，只取标题、链接与元数据；正文由本工程按 `NEWSKG_POLITE_DELAY` 礼让抓取，**不绕过任何反爬**（被 405/202/429 挡下的源直接放弃，见 §5）。
 - GDELT 只提供 URL 与元数据，正文版权归原站点；Guardian 开发者 key 仅限非商业用途。
 - 抓取遵守 `NEWSKG_POLITE_DELAY`（默认 1 秒/域名）。发布或商用前必须逐源确认许可。
+

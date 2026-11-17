@@ -278,10 +278,12 @@ class FilteredSource:
         picked_ids = {id(stub) for stub in picked}
         displaced = [stub for stub in natural if id(stub) not in picked_ids]
         if displaced:
-            srcs = {stub.source for stub in natural} - {stub.source for stub in picked}
+            # 让位者自己的来源，而不是「自然序里有、最终没有的来源」——后者在
+            # 该源还有其他文章入选时是空集，日志就会打出空括号。
+            srcs = sorted({stub.source for stub in displaced})
             print(
                 f"[topic] 单源配额 {cap} 篇：{len(displaced)} 篇高分同源文章让位"
-                f"（{'/'.join(sorted(srcs))}）"
+                f"（{'/'.join(srcs)}）"
             )
         return picked
 

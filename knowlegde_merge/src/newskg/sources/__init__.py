@@ -3,13 +3,15 @@
 每个源只需要实现 discover()，返回 ArticleStub 列表；
 「怎么抓正文」「怎么转格式」由上层统一处理，源之间不重复实现。
 
-题材已从「中国股票」换成「科技」，所以这里的默认集合是 11 个科技源
-（英文 5 + 中文 6），中文财经四源已移除（历史实现见 git 记录）。
+题材已从「中国股票」换成「科技」，语种收敛为**纯中文**（2026-11 起英文源全部移除）：
+默认集合是 12 个中文科技源，其中 4 个是通讯社/报社（中新网、经济观察报、界面），
+8 个是科技垂媒。中文财经四源已移除（历史实现见 git 记录）。
 
 `--source` 支持三种写法：
-- 单个源：`--source techcrunch`
-- 逗号分隔：`--source techcrunch,verge`
-- 预设：`--source tech`（全部科技源）/ `tech-en` / `tech-zh` / `all`（连国际源一起）
+- 单个源：`--source ithome`
+- 逗号分隔：`--source ithome,qbitai`
+- 预设：`--source tech`（全部 12 个）/ `tech-off`（官方 4 个）/ `tech-media`（垂媒 8 个）
+  / `all`（连国际综合源一起）
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ from .rss import RssSource
 from .tech import (  # noqa: F401
     EN_NAMES,
     FEEDS,
+    PRESETS,
     ZH_NAMES,
     TechFeed,
     make_default_preset,
@@ -45,8 +48,8 @@ __all__ = [
     "FEEDS",
 ]
 
-#: 科技预设。`tech` 把 11 个 feed 放进**同一个适配器实例**里，
-#: 这样日志与去重都只发生一次，而不是先合并 11 个源再合并一遍。
+#: 科技预设。`tech` 把 12 个 feed 放进**同一个适配器实例**里，
+#: 这样日志与去重都只发生一次，而不是先合并 12 个源再合并一遍。
 _REGISTRY: dict[str, object] = {
     # 国际综合（仍然是英文新闻，可用于对照实验）
     "gdelt": GdeltSource,
@@ -56,8 +59,8 @@ _REGISTRY: dict[str, object] = {
     **{name: make_single(name) for name in FEEDS},
     # 科技预设
     "tech": make_default_preset(),
-    "tech-en": make_preset("tech-en", EN_NAMES),
-    "tech-zh": make_preset("tech-zh", ZH_NAMES),
+    "tech-off": make_preset("tech-off", PRESETS["tech-off"]),
+    "tech-media": make_preset("tech-media", PRESETS["tech-media"]),
     # 离线
     "fixtures": FixtureSource,
     "fixture": FixtureSource,

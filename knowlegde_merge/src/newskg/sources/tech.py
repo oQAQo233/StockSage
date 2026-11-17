@@ -1,12 +1,16 @@
-"""科技题材新闻源（RSS / Atom）。
+"""科技题材新闻源（RSS / Atom），**只保留中文源**。
 
-替换掉原来的中文财经四源：题材从「中国股票」换成「科技」，语种仍然中英双语，
-因为下游的谓词层本来就是按语种分流的（中文出中文谓词，英文出 snake_case）。
+题材从「中国股票」换成「科技」后，语种也从中英双语收敛到纯中文：需求是「权威、
+带时间标签的中文科技新闻」，英文源在 2026-11 全部移除。
 
-**这里的每个源都是 2026-11 实测过的**，判据不是「RSS 能解析」，而是
-「RSS 能解析 **且** 首条正文能被 trafilatura 抽出 >400 字符」——只过前者会在
-抓取层全军覆没（en 源里 arstechnica 返回 405、engadget 返回 202、venturebeat 429；
-zh 源里 36氪 / cnBeta / 机器之心 的 /feed 返回 HTML 而不是 feed）。
+**这里的每个源都是 2026-11 实测过的**，判据是三条，不是一条：
+1. `feedparser` 能解析出条目；
+2. 条目带 `pubDate`（没有时间标签，`--days` 时间窗会静默失效，等于把过滤关掉）；
+3. 首条正文能被 trafilatura 抽出 >400 字符。
+
+只过第 1 条会在抓取层全军覆没；只过 1+2 会拿到一堆抓不出正文的链接。实测被淘汰的
+（详见 README §5）：新华网（300 条但零时间戳）、人民网（有日期但停在 2024/2025）、
+中国政府网（正文仅 56 字符）、科技日报 / 中国科学报 / 央视网 / 光明网（RSS 已下线）。
 
 一个适配器类管所有 feed，不为每个站点写一份：RSS 的解析细节归 feedparser，
 这里只负责「把 entry 归一成 ArticleStub」以及每源失败互不牵连。
@@ -26,19 +30,20 @@ PER_FEED_CAP = 40
 
 #: name -> (feed_url, lang, 站点名)
 FEEDS: dict[str, tuple[str, str, str]] = {
-    # ---- 英文 ----
-    "techcrunch": ("https://techcrunch.com/feed/", "en", "TechCrunch"),
-    "verge": ("https://www.theverge.com/rss/index.xml", "en", "The Verge"),
-    "mittr": ("https://www.technologyreview.com/feed/", "en", "MIT Technology Review"),
-    "wired": ("https://www.wired.com/feed/rss", "en", "WIRED"),
-    "ieee": ("https://spectrum.ieee.org/feeds/feed.rss", "en", "IEEE Spectrum"),
-    # ---- 中文 ----
+    # ---- 权威/官方：通讯社与报社（都带 pubDate，时间窗过滤才生效）----
+    "chinanews_fin": ("https://www.chinanews.com.cn/rss/finance.xml", "zh", "中新网·财经"),
+    "chinanews_top": ("https://www.chinanews.com.cn/rss/scroll-news.xml", "zh", "中新网·要闻"),
+    "eeo": ("http://www.eeo.com.cn/rss.xml", "zh", "经济观察报"),
+    "jiemian": ("https://a.jiemian.com/index.php?m=article&a=rss", "zh", "界面新闻"),
+    # ---- 科技垂媒 ----
     "qbitai": ("https://www.qbitai.com/feed", "zh", "量子位"),
     "solidot": ("https://www.solidot.org/index.rss", "zh", "Solidot"),
     "ithome": ("https://www.ithome.com/rss/", "zh", "IT之家"),
     "ifanr": ("https://www.ifanr.com/feed", "zh", "爱范儿"),
     "infoq": ("https://www.infoq.cn/feed", "zh", "InfoQ 中文"),
     "sspai": ("https://sspai.com/feed", "zh", "少数派"),
+    "tmtpost": ("https://www.tmtpost.com/rss.xml", "zh", "钛媒体"),
+    "leiphone": ("https://www.leiphone.com/feed", "zh", "雷锋网"),
 }
 
 ZH_NAMES = [n for n, (_, lang, _) in FEEDS.items() if lang == "zh"]
@@ -181,9 +186,9 @@ def make_preset(name: str, keys: list[str]):
 
 #: 预设名 -> 该预设包含哪些 feed
 PRESETS: dict[str, list[str]] = {
-    "tech": list(FEEDS),          # 全部 11 个
-    "tech-en": EN_NAMES,          # 英文 5 个
-    "tech-zh": ZH_NAMES,          # 中文 6 个
+    "tech": list(FEEDS),          # 全部 12 个（都是中文）
+    "tech-off": ["chinanews_fin", "chinanews_top", "eeo", "jiemian"],  # 官方/报社
+    "tech-media": ["qbitai", "solidot", "ithome", "ifanr", "infoq", "sspai", "tmtpost", "leiphone"],
 }
 
 
