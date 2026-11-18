@@ -125,9 +125,14 @@ def assess(body: str, title: str = "") -> Verdict:
     门槛压低（200 字）是有意的——短快讯是合法新闻，只是长文被拦在门外。
     """
     cleaned = clean(body, title)
-    total = max(sum(len(ln) for ln in cleaned.splitlines() if ln.strip()), 1)
+    lines = [ln for ln in cleaned.splitlines() if ln.strip()]
+    total = max(sum(len(ln) for ln in lines), 1)
+    # 页脚只在「尾部 + 短行」里找。早期版本对全文每一行都匹配，
+    # 抽出来是单行的稿子（爱范儿偶发）只要正文里出现一次「电话：」，
+    # 整篇就被算成 100% 页脚——实测误杀了一篇 1539 字的耳机评测。
+    tail_from = int(len(lines) * 0.8)
     footer_chars = sum(
-        len(ln) for ln in cleaned.splitlines() if ln.strip() and FOOTER_LINE.search(ln)
+        len(ln) for ln in lines[tail_from:] if len(ln) <= 60 and FOOTER_LINE.search(ln)
     )
     footer_ratio = footer_chars / total
     size = content_len(cleaned)

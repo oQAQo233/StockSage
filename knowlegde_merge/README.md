@@ -248,7 +248,9 @@ set PYTHONPATH=src;.kgvenv
 .\.venv\Scripts\python.exe -m newskg.cli fetch --source chinanews_day --day 2026-11-04 --days 15 --limit 60
 ```
 
-`chinanews_day` 解析 `scroll-news/YYYY/MMDD/news.shtml`，一天约 530 条、每条带分钟，站点时间是北京时，入库统一折成 UTC。其它源要回溯，得各加一个 `sources/archive.py` 里的 spec。
+`chinanews_day` 解析 `scroll-news/YYYY/MMDD/news.shtml`，一天约 530 条、每条带分钟，站点时间是北京时，入库统一折成 UTC。`ifanr_day` 解析 `ifanr.com/date/YYYY/MM/DD`，一天 1~12 条，页面自带 `<time datetime>`（含时区）。其它源要回溯，得各加一个 `sources/archive.py` 里的 spec。
+
+**当前语料窗口：2026-11-04 ~ 2026-11-10（7 天）**，只收科技相关报道。已接的按天源：`chinanews_day`、`ifanr_day`；其余 9 个源仍是 RSS，只能覆盖最近两三天。
 
 **入选判据三条**，缺一不可：
 

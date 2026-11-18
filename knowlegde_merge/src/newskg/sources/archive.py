@@ -93,4 +93,74 @@ class ChinanewsArchive:
         return stubs
 
 
-__all__ = ["ChinanewsArchive"]
+#: 爱范儿日页：一天 12 条左右，`<time datetime="2026-11-04T23:12:46+08:00">` 自带时区
+_IFANR_ITEM = re.compile(
+    r'<div class="js-pager-item">\s*<div class="article-item[^"]*"[^>]*data-post-id="(\d+)".*?'
+    r'<h3><a href="([^"]+)"[^>]*>(.*?)</a></h3>.*?'
+    r'<time datetime="([^"]+)"',
+    re.S,
+)
+
+
+class IfanrDate:
+    """爱范儿按天归档：https://www.ifanr.com/date/2026/11/04（一天一页，无分页）。"""
+
+    license = "爱范儿版权，正文版权归原站点"
+    name = "ifanr_day"
+
+    def __init__(self, day: str = ""):
+        self.day = (day or os.getenv("NEWSKG_ARCHIVE_DATE", "")).strip()
+
+    def _target(self) -> datetime:
+        if not self.day:
+            raise SystemExit("按日期抓取需要指定日期：--day 2026-11-04")
+        try:
+            return datetime.strptime(self.day, "%Y-%m-%d")
+        except ValueError:
+            raise SystemExit(f"日期格式应为 YYYY-MM-DD，收到 {self.day!r}") from None
+
+    def discover(self, query: str | None, limit: int, days: int) -> list[ArticleStub]:
+        day = self._target()
+        url = f"https://www.ifanr.com/date/{day:%Y/%m/%d}"
+        resp = http_get(url)
+        resp.raise_for_status()
+        resp.encoding = resp.apparent_encoding
+
+        stubs: list[ArticleStub] = []
+        seen: set[str] = set()
+        for _pid, href, title, when in _IFANR_ITEM.findall(resp.text):
+            if href in seen:
+                continue
+            if query and query.lower() not in title.lower():
+                continue
+            seen.add(href)
+            try:
+                published = datetime.fromisoformat(when).astimezone(timezone.utc)
+            except ValueError:
+                published = day.replace(tzinfo=bjt_of(when))
+            stubs.append(
+                ArticleStub(
+                    source="ifanr_day",
+                    url=href,
+                    title=html.unescape(re.sub(r"<[^>]+>", "", title)).strip(),
+                    published_at=published.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    lang="zh",
+                    license=self.license,
+                    extra={"archive": "ifanr"},
+                )
+            )
+            if len(stubs) >= limit:
+                break
+        print(f"  [{self.name}] {day:%Y-%m-%d} 归档页：{len(stubs)} 条")
+        return stubs
+
+
+def bjt_of(when: str):
+    """从 ISO 串里取时区偏移；取不到就按北京时间。"""
+    for tail in ("+08:00", "+0800"):
+        if when.endswith(tail):
+            return BJT
+    return BJT
+
+
+__all__ = ["ChinanewsArchive", "IfanrDate"]

@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from .archive import ChinanewsArchive
+from .archive import ChinanewsArchive, IfanrDate
 from .base import Source
 from .filters import FilteredSource, keyword_score, within_window
 from .fixtures import FixtureSource
@@ -66,6 +66,7 @@ _REGISTRY: dict[str, object] = {
     # 按天归档（RSS 抓不到的日期用它）
     "chinanews_day": ChinanewsArchive,
     "archive": ChinanewsArchive,
+    "ifanr_day": IfanrDate,
     # 离线
     "fixtures": FixtureSource,
     "fixture": FixtureSource,
