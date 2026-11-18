@@ -11,6 +11,7 @@ from .config import FIXTURES, MD, RAW, ROOT
 from .convert import Extracted, build_markdown_document, extract_article, fetch_html
 from .dedup import canonicalize_url, content_fingerprint, find_duplicates, simhash, simhash_int
 from .models import Article, ArticleStub, Triple, sha1_of
+from .kg.bylines import drop_noise
 from .kg.entities import canonicalize
 from .quality import assess
 from .sources.base import RateLimiter
@@ -277,6 +278,11 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
             )
             continue
         ok += 1
+        # 记者署名与媒介出处不该进图：不对它们做归一，否则「钟旖」这种度为 1 的
+        # 节点会一篇一个地累积，把中心度和社区发现一起拉偏。
+        triples, noise = drop_noise(triples, article.body)
+        if noise and verbose:
+            print(f"      过滤署名/出处 {noise} 条", flush=True)
         # 实体归一化放在抽取之后、入库之前：同一个实体在不同文章里写成
         # `Capcom` / `卡普空` 时，不合并就是把度数切碎，跨文章共现永远统计不出来。
         triples, merged = canonicalize(triples)

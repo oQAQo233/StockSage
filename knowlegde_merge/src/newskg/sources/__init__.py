@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from .archive import ChinanewsArchive
 from .base import Source
 from .filters import FilteredSource, keyword_score, within_window
 from .fixtures import FixtureSource
@@ -62,6 +63,9 @@ _REGISTRY: dict[str, object] = {
     "tech": make_default_preset(),
     "tech-off": make_preset("tech-off", PRESETS["tech-off"]),
     "tech-media": make_preset("tech-media", PRESETS["tech-media"]),
+    # 按天归档（RSS 抓不到的日期用它）
+    "chinanews_day": ChinanewsArchive,
+    "archive": ChinanewsArchive,
     # 离线
     "fixtures": FixtureSource,
     "fixture": FixtureSource,

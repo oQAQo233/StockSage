@@ -242,6 +242,14 @@ set PYTHONPATH=src;.kgvenv
 
 预设：`tech`（11 个）、`tech-off`（7 个权威源）、`tech-media`（4 个垂媒）、`all`（再并入 gdelt / guardian / 通用 rss）。
 
+**回溯历史日期**：RSS 只保留最近两三天（实测 11-18 抓，最早只到 11-16），指定日期要走站点的日页归档。目前接了中新网：
+
+```bat
+.\.venv\Scripts\python.exe -m newskg.cli fetch --source chinanews_day --day 2026-11-04 --days 15 --limit 60
+```
+
+`chinanews_day` 解析 `scroll-news/YYYY/MMDD/news.shtml`，一天约 530 条、每条带分钟，站点时间是北京时，入库统一折成 UTC。其它源要回溯，得各加一个 `sources/archive.py` 里的 spec。
+
 **入选判据三条**，缺一不可：
 
 1. 能解析出条目（RSS 的 `<item>`，或列表页的「标题 + 链接」）；

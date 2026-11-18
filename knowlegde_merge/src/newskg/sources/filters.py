@@ -15,6 +15,8 @@
 
 from __future__ import annotations
 
+import os
+
 import re
 from datetime import datetime, timedelta, timezone
 
@@ -31,7 +33,7 @@ FUTURE_TOLERANCE = timedelta(hours=6)
 
 #: 最多给多少条候选打分。多要候选能提高"过阈值数量"的稳定性，但每条都要花 token，
 #: 60 条 / 阈值 6 的配置在实测里足够凑满 limit=10~30。
-MAX_SCORED = 60
+MAX_SCORED = int(os.getenv("NEWSKG_TOPIC_MAX_SCORED", "60"))
 
 #: 单源配额：任一来源最多占 limit 的这个比例（软限制，凑不满会放宽）
 SRC_CAP_RATIO = 0.35

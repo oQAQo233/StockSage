@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import sys
 from datetime import datetime, timezone
@@ -55,6 +56,8 @@ def cmd_init(args) -> int:
 
 def cmd_fetch(args) -> int:
     config.ensure_dirs()
+    if getattr(args, "day", None):
+        os.environ["NEWSKG_ARCHIVE_DATE"] = args.day
     source = build_source(args.source)
     # 两道过滤都放在发现层：先按发布时间卡窗口，再用 LLM 给科技相关性打分并卡阈值。
     # 下游（抓取 → 转换 → 抽取 → 入库）拿到的仍是普通 ArticleStub，完全无感。
@@ -308,6 +311,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=2,
         help="时间窗：只保留距「现在」N 天以内发布的文章，可带小数（如 0.5 = 12 小时）",
+    )
+    p.add_argument(
+        "--day",
+        default="",
+        help="按天抓归档（仅 chinanews_day 之类源支持），格式 2026-11-04；RSS 源忽略此项",
     )
     p.add_argument(
         "--topic",
