@@ -281,7 +281,7 @@ def _add_db_option(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="newskg",
-        description="新闻 → 统一 Markdown → 知识图谱（课程作业版）",
+        description="新闻 → 统一 Markdown → 知识图谱 → 带引用的报告",
     )
     parser.add_argument("--db", help="SQLite 路径，默认 out/kg.sqlite3")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -368,9 +368,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--keep-articles", action="store_true")
     p.set_defaults(func=cmd_reset)
 
-    p = sub.add_parser("ask", help="按一句话查询检索报道并生成报告（M1：摘要 + 来源）")
+    p = sub.add_parser("ask", help="按一句话查询检索报道并生成报告（五节 + 来源）")
     _add_db_option(p)
-    p.add_argument("query", help="自然语言查询，例如「固态电池产业链最近有什么进展」")
+    p.add_argument("query", help="自然语言查询，例如「小米机器人在具身智能上有什么进展」")
     p.add_argument("--top", type=int, default=8, help="入选报道数上限（默认 8）")
     p.add_argument("--hops", type=int, default=2, help="图路扩展跳数（默认 2）")
     p.add_argument("--out", help="报告路径（默认 out/reports/<slug>.md）")
@@ -394,6 +394,7 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 
 
 
