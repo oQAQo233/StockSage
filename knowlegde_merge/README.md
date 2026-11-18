@@ -79,7 +79,7 @@ set PYTHONPATH=src;.kgvenv
 | 抓取 | `convert.py`（trafilatura） | 正文 >400 字符才算抓成功；抽不出就记失败，不猜 |
 | 统一 | `convert.py`（markitdown） | 一份正文两种表示：HTML→MD 供人读，纯文本供索引 |
 | 去重 | `dedup.py` | URL 规范化 → 精确指纹 → SimHash → shingle Jaccard，四层递进 |
-| 抽取 | `kg/kggen.py` | 只保留 KGGen 一个后端，删掉正则基线与手写 prompt |
+| 抽取 | `kg/kggen.py` | 采用 Kggen |
 | 归一 | `kg/entities.py` | 字符层 → 别名表 → 泛化过滤，顺序不可换 |
 | 索引 | `textindex.py` | 以**段落**为单位建 FTS5，不索引句子 |
 | 检索 | `retrieve.py` | 图路 + 文本路双召回，RRF 只比名次 |
