@@ -229,6 +229,8 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
         rows = rows[:limit]
 
     total = 0
+    ok = 0
+    failed: list[tuple[str, str]] = []
     for row in rows:
         md_path = ROOT / row["markdown_path"]
         if not md_path.exists():
@@ -263,7 +265,18 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
             raw_path="",
             markdown_path=row["markdown_path"],
         )
-        triples: list[Triple] = extractor.extract(article)
+        try:
+            triples: list[Triple] = extractor.extract(article)
+        except Exception as exc:
+            # 单篇失败不能拖垮整批：2000 篇要跑几十小时，中途一次超时或限流
+            # 就让整轮白跑是不可接受的。不记台账，下次重跑会再试这一篇。
+            failed.append((row["article_id"], f"{type(exc).__name__}: {exc}"))
+            print(
+                f"      {row['article_id'][:8]}  抽取失败 -> {type(exc).__name__}: {exc}",
+                flush=True,
+            )
+            continue
+        ok += 1
         # 实体归一化放在抽取之后、入库之前：同一个实体在不同文章里写成
         # `Capcom` / `卡普空` 时，不合并就是把度数切碎，跨文章共现永远统计不出来。
         triples, merged = canonicalize(triples)
@@ -285,6 +298,15 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
             )
 
     conn.commit()
+    if rows and verbose:
+        print(
+            f"      本轮：成功 {ok} 篇，失败 {len(failed)} 篇，新增三元组 {total} 条",
+            flush=True,
+        )
+    if failed:
+        print(f"      失败的文章没有记账，下次 build 会自动重试；本次失败 {len(failed)} 篇：", flush=True)
+        for aid, err in failed[:5]:
+            print(f"        {aid[:8]}  {err[:90]}", flush=True)
     if rows and total == 0 and verbose:
         print(
             "      注意：这批文章一条三元组也没抽出来。常见原因是模型端点不可用、"
