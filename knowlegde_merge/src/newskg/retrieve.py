@@ -1,4 +1,4 @@
-﻿"""查询检索：把一段自然语言查询变成"相关报道 + 相关事实"。
+"""查询检索：把一段自然语言查询变成"相关报道 + 相关事实"。
 
 分三步，每步都只做一件事：
 
@@ -22,6 +22,7 @@ from pathlib import Path
 
 from . import events as events_mod
 from . import textindex
+from .dedup import simhash_hex
 from .kg.entities import ALIAS_PATH
 
 #: 图路扩展跳数。行业类查询要 2 跳才够（公司→供应商→上游材料），
@@ -209,7 +210,8 @@ def _article_meta(conn, article_ids: list[str]) -> dict[str, dict]:
             "published_at": r["published_at"] or "",
             "url": r["url"] or "",
             "markdown_path": r["markdown_path"] or "",
-            "simhash": r["simhash"] or "",
+            # 统一成 hex：老库存的是 int / REAL，新库存 hex；下游按字符串比较
+            "simhash": simhash_hex(r["simhash"]),
         }
         for r in rows
     }
@@ -454,6 +456,7 @@ __all__ = [
     "retrieve",
     "save_evidence",
 ]
+
 
 
 

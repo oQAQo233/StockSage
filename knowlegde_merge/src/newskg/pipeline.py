@@ -2,19 +2,31 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import FIXTURES, MD, RAW, ROOT
 from .convert import Extracted, build_markdown_document, extract_article, fetch_html
-from .dedup import canonicalize_url, content_fingerprint, find_duplicates, simhash
+from .dedup import canonicalize_url, content_fingerprint, find_duplicates, simhash, simhash_int
 from .models import Article, ArticleStub, Triple, sha1_of
 from .kg.entities import canonicalize
+from .quality import assess
 from .sources.base import RateLimiter
 from .sources.timestamps import pick_published
 from .store import upsert_article, upsert_triples, connect
 from . import config
+
+
+class BodyRejected(ValueError):
+    """正文质量不达标（几乎只剩页脚，或短到没有信息量）。"""
+
+    def __init__(self, reason: str, title: str, url: str):
+        super().__init__(reason)
+        self.reason = reason
+        self.title = title
+        self.url = url
 
 
 def _rel(path: Path) -> str:
@@ -27,6 +39,18 @@ def _rel(path: Path) -> str:
 
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _log_rejected(reason: str, title: str, url: str) -> None:
+    """拒收也要留痕：跑 2000 篇时，`out/rejected.jsonl` 是唯一能回查"少了什么"的地方。"""
+    try:
+        path = ROOT / "out" / "rejected.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        record = {"ts": _now(), "reason": reason, "title": title, "url": url}
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError:
+        pass  # 日志写不进去不该让抓取失败
 
 
 def process_stub(stub: ArticleStub, limiter: RateLimiter | None = None) -> Article:
@@ -72,6 +96,13 @@ def process_stub(stub: ArticleStub, limiter: RateLimiter | None = None) -> Artic
     published = pick_published(stub.published_at, ext.published_at)
     body_text = ext.body_text or ext.body_markdown
 
+    # 质量闸：正文几乎只剩页脚（zqrb 那类）或短到没有信息量的，不进库、不写 md，
+    # 更不会在 build 时花钱抽成垃圾三元组。判据见 quality.py。
+    verdict = assess(body_text, title)
+    if not verdict.ok:
+        raise BodyRejected(verdict.reason, title, stub.url)
+    body_text = verdict.body
+
     article = Article(
         article_id=article_id,
         source=stub.source,
@@ -79,7 +110,7 @@ def process_stub(stub: ArticleStub, limiter: RateLimiter | None = None) -> Artic
         canonical_url=canonical,
         title=title,
         published_at=published,
-        lang=stub.lang,
+        lang=verdict.lang,
         license=stub.license,
         authors=ext.authors,
         body=body_text,
@@ -131,11 +162,17 @@ def ingest(source, query: str | None, limit: int, days: int, conn: sqlite3.Conne
     limiter = RateLimiter(config.POLITE_DELAY)
     articles: list[Article] = []
     failed = 0
+    rejected: list[str] = []
 
     print("[2/3] 抓取 + 正文抽取 + 转 Markdown")
     for i, stub in enumerate(stubs, 1):
         try:
             article = process_stub(stub, limiter)
+        except BodyRejected as exc:
+            rejected.append(exc.reason)
+            _log_rejected(exc.reason, exc.title, exc.url)
+            print(f"      [{i}/{len(stubs)}] 拒收 {exc.reason}｜{exc.title[:40]}")
+            continue
         except Exception as exc:
             failed += 1
             print(f"      [{i}/{len(stubs)}] 跳过 {stub.url[:70]} -> {type(exc).__name__}: {exc}")
@@ -146,7 +183,15 @@ def ingest(source, query: str | None, limit: int, days: int, conn: sqlite3.Conne
             f"{article.source:<8} {article.title[:56]}"
         )
 
-    print(f"      成功 {len(articles)} 篇，失败 {failed} 篇")
+    print(f"      成功 {len(articles)} 篇，失败 {failed} 篇，正文不达标 {len(rejected)} 篇")
+    if rejected:
+        # 按原因归类，跑 2000 篇时一眼能看出闸门拦的是什么
+        kinds: dict[str, int] = {}
+        for reason in rejected:
+            head = reason.split("（")[0]
+            kinds[head] = kinds.get(head, 0) + 1
+        for head, n in sorted(kinds.items(), key=lambda kv: -kv[1]):
+            print(f"        拒收原因 {head}: {n} 篇")
 
     print("[3/3] 去重 + 入库")
     dup_map = find_duplicates(
@@ -165,13 +210,8 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
                 verbose: bool = True, only_ids: set[str] | None = None) -> int:
     """对库里尚未被**这个抽取器**处理过的文章跑抽取。
 
- 
-
-    三方对照就无从谈起。
-
-    
-
-    对按 token 计费的后端就是纯浪费。
+    「未被处理过」按 `runs` 台账算，不按 `triples` 有没有行算：抽到 0 条也是一次
+    已经付过费的处理，必须记下来，否则下次重跑还要再付一次。
     """
     sql = """
         SELECT * FROM articles a
@@ -194,6 +234,19 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
         if not md_path.exists():
             continue
         body = _strip_front_matter(md_path.read_text(encoding="utf-8"))
+        # 老库里可能还留着历史废稿：抽之前再判一次，不合格就记台账跳过，
+        # 免得 2000 篇跑完才发现有几篇只抽出一堆电话和许可证号。
+        verdict = assess(body, row["title"] or "")
+        if not verdict.ok:
+            conn.execute(
+                "INSERT OR REPLACE INTO runs (article_id, extractor, n_triples, created_at) VALUES (?,?,?,?)",
+                (row["article_id"], extractor.name, 0, _now()),
+            )
+            conn.commit()
+            if verbose:
+                print(f"      {row['article_id'][:8]}  跳过：{verdict.reason}", flush=True)
+            continue
+        body = verdict.body
         article = Article(
             article_id=row["article_id"],
             source=row["source"],
@@ -206,7 +259,7 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
             authors=[],
             body=body,
             content_sha1=row["content_sha1"] or "",
-            simhash=int(row["simhash"] or 0),
+            simhash=simhash_int(row["simhash"]),
             raw_path="",
             markdown_path=row["markdown_path"],
         )
@@ -254,4 +307,5 @@ def reset(conn: sqlite3.Connection, keep_articles: bool = False) -> None:
     if not keep_articles:
         conn.execute("DELETE FROM articles")
     conn.commit()
+
 

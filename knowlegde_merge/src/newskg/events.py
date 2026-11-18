@@ -48,11 +48,18 @@ def _jaccard(a: set[str], b: set[str]) -> float:
     return len(a & b) / len(a | b)
 
 
-def _hamming(simhash_a: str, simhash_b: str) -> int:
+def _hamming(simhash_a, simhash_b) -> int:
+    """两种输入都收：库里是 hex 串，内存里是 int。
+
+    以前只认 hex，而 `retrieve` 传进来的正是 int，`int(a, 16)` 抛 TypeError 被
+    except 吞掉、返回 64——于是"近重复"这条权重 3 的信号永远不触发，且没有任何报错。
+    """
     try:
-        return bin(int(simhash_a, 16) ^ int(simhash_b, 16)).count("1")
+        a = int(simhash_a, 16) if isinstance(simhash_a, str) else int(simhash_a)
+        b = int(simhash_b, 16) if isinstance(simhash_b, str) else int(simhash_b)
     except (TypeError, ValueError):
         return 64
+    return bin(a ^ b).count("1")
 
 
 def _hours_apart(a: str, b: str) -> float | None:

@@ -90,6 +90,39 @@ def hamming(a: int, b: int) -> int:
     return bin(a ^ b).count("1")
 
 
+#: 64 位 SimHash 最大 1.8e19，超出 SQLite 的 int64 上限（9.2e18）。
+#: 直接写 INTEGER 列会被降级成 REAL，尾数被砍掉十一位——所以库里存十六进制字符串。
+_HEX = re.compile(r"^[0-9a-fA-F]{1,16}$")
+
+
+def simhash_hex(value) -> str:
+    """把库里的 SimHash 统一成十六进制串。
+
+    新库本来就存 hex；老库可能存成 int（≤2^63）或 REAL（>2^63 被降级，低位已丢，
+    这里只能尽量还原，不能变回精确值）。空值返回空串，调用方按"没有哈希"处理。
+    """
+    if value in (None, "", 0, "0"):
+        return ""
+    if isinstance(value, str):
+        text = value.strip()
+        if _HEX.match(text):
+            return text.lower()
+        try:
+            return format(int(float(text)), "x")
+        except ValueError:
+            return ""
+    try:
+        return format(int(value), "x")
+    except (TypeError, ValueError):
+        return ""
+
+
+def simhash_int(value) -> int:
+    """`simhash_hex` 的整数版本（算汉明距离用）。"""
+    text = simhash_hex(value)
+    return int(text, 16) if text else 0
+
+
 def shingles(text: str, k: int = 3) -> set[str]:
     """k 词滑窗。用于在 SimHash 之后做二次确认。"""
     words = _tokens(text)

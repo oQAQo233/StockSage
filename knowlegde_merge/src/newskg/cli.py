@@ -1,4 +1,4 @@
-﻿"""命令行入口。
+"""命令行入口。
 
     python -m newskg.cli demo
     python -m newskg.cli fetch --source tech --limit 20
@@ -290,7 +290,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_db_option(p)
     p.set_defaults(func=cmd_init)
 
-    p = sub.add_parser("fetch", help="从某个源抓取文章")
+    p = sub.add_parser("fetch", help="从某个源抓取文章（正文不合格的会被拒收）")
     _add_db_option(p)
     p.add_argument(
         "--source",

@@ -1,4 +1,4 @@
-﻿# NewsKG
+# NewsKG
 
 **新闻 → 统一 Markdown → 知识图谱 → 带引用的报告。**
 
@@ -78,6 +78,7 @@ set PYTHONPATH=src;.kgvenv
 | 过滤 | `sources/filters.py` | 时间窗 + LLM 题材打分（阈值 6）两道闸，先砍量再抓正文 |
 | 抓取 | `convert.py`（trafilatura） | 正文 >400 字符才算抓成功；抽不出就记失败，不猜 |
 | 统一 | `convert.py`（markitdown） | 一份正文两种表示：HTML→MD 供人读，纯文本供索引 |
+| 正文闸 | `quality.py` | 删页脚/推荐列表；只剩许可证与电话的残稿不进库 |
 | 去重 | `dedup.py` | URL 规范化 → 精确指纹 → SimHash → shingle Jaccard，四层递进 |
 | 抽取 | `kg/kggen.py` | 采用 Kggen |
 | 归一 | `kg/entities.py` | 字符层 → 别名表 → 泛化过滤，顺序不可换 |
@@ -329,6 +330,7 @@ set PYTHONPATH=src;.kgvenv
 | `NEWSKG_TECH_FEEDS` | 全部 11 个 | 覆盖 `tech` 预设成员（逗号分隔注册名） |
 | `NEWSKG_POLITE_DELAY` | 1.0 | 同域名抓取间隔（秒） |
 | `NEWSKG_MAX_BODY_CHARS` | 12000 | 单篇正文截断长度 |
+| `NEWSKG_MIN_BODY_CHARS` | 150 | 正文低于此字数拒收（页脚残稿、付费墙残页） |
 
 ---
 
@@ -376,6 +378,7 @@ knowlegde_merge/
 | `graph.json` / `.cypher` / `.graphml` | `export` | 三种图格式 |
 | `*.html` | `tools/view_graph_lite.py` | 单文件可交互图，断网可用 |
 | `topic_scores.json` | `fetch` | 题材打分缓存（改阈值重跑不再付费） |
+| `rejected.jsonl` | `fetch` | 正文不合格被拒的记录（标题/URL/原因），跑大语料后靠它复核 |
 | `reports/*.md` | `ask` | 报告：摘要 / 背景 / 主体 / 时间线 / 趋势 / 来源 |
 | `reports/*.evidence.json` | `ask` | 证据包：入选报道、命中段落、图路事实、两路名次、事件簇 |
 
@@ -411,6 +414,8 @@ knowlegde_merge/
 12. 单机 SQLite：上万篇要换 Postgres 或图数据库，`export cypher` 是迁移入口。
 13. 权威优先的代价是科技密度：11 个源里 7 个是通讯社/报社，题材打分要筛掉大量弱相关条目，20 篇入库靠的是 LLM 打分这一道闸。
 14. 列表页源只到"天"：新华网、科技日报给不出精确到分钟的发布时间。
+15. 近重复只抓逐字转载：SimHash 阈值 6，长文删掉一段就够不着（实测删一句距离 15）。所以聚类实际主要靠标题重合与共享实体，SimHash 只兜住通稿原文。
+16. 短快讯会被正文闸错杀：低于 150 字的合法快讯与页脚残稿在形式上分不开，宁可错杀。被拒的理由记在 `out/rejected.jsonl`，要复核直接看这个文件。
 
 ---
 
@@ -451,6 +456,8 @@ SQLite 版本过旧（需 3.34+ 且编译时启用 FTS5）。`python -c "import 
 - 抓取按 `NEWSKG_POLITE_DELAY` 限速，**不绕过任何反爬**：被 403/405/429 挡下的源直接放弃。
 - `.env` 里的大模型 key 不要提交；仓库只保留 `.env.example`。
 - `data/fixtures/` 是合成样例，不是真实新闻，不能当语料引用。
+
+
 
 
 

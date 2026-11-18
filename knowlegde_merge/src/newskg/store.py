@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS articles (
     lang           TEXT,
     license        TEXT,
     content_sha1   TEXT,
-    simhash        INTEGER,
+    simhash        TEXT,       -- 十六进制串：64 位值超 int64，存整数会被降级成 REAL
     raw_path       TEXT,
     markdown_path  TEXT,
     word_count     INTEGER,
@@ -94,11 +94,27 @@ def connect(path: Path | str = DB_PATH) -> sqlite3.Connection:
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    """老库补列：CREATE TABLE IF NOT EXISTS 不会改已存在的表。"""
+    """老库补列 / 补格式：CREATE TABLE IF NOT EXISTS 不会改已存在的表。"""
     existing = {r["name"] for r in conn.execute("PRAGMA table_info(articles)")}
     for column, ddl in (("raw_path", "ALTER TABLE articles ADD COLUMN raw_path TEXT"),):
         if column not in existing:
             conn.execute(ddl)
+
+    # SimHash 老库里是 INTEGER/REAL（64 位值超 int64，被降级成浮点、低位已丢）。
+    # 这里统一改写成十六进制串，至少让后续读写不再继续掉精度；已丢的位无法恢复。
+    rows = list(
+        conn.execute(
+            "SELECT article_id, simhash FROM articles WHERE typeof(simhash) IN ('integer', 'real')"
+        )
+    )
+    for row in rows:
+        try:
+            conn.execute(
+                "UPDATE articles SET simhash = ? WHERE article_id = ?",
+                (format(int(row["simhash"]), "x"), row["article_id"]),
+            )
+        except (TypeError, ValueError):
+            continue
     conn.commit()
 
 
@@ -127,7 +143,7 @@ def upsert_article(conn: sqlite3.Connection, article: Article, duplicate_of: str
             article.lang,
             article.license,
             article.content_sha1,
-            str(article.simhash),
+            format(article.simhash, 'x'),  # hex：64 位值存 INTEGER 会被 SQLite 降级成 REAL
             article.raw_path,
             article.markdown_path,
             article.word_count,
