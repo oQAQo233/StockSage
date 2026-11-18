@@ -208,11 +208,16 @@ def ingest(source, query: str | None, limit: int, days: int, conn: sqlite3.Conne
 
 
 def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
-                verbose: bool = True, only_ids: set[str] | None = None) -> int:
+                verbose: bool = True, only_ids: set[str] | None = None,
+                workers: int = 1, shard: str | None = None) -> int:
     """对库里尚未被**这个抽取器**处理过的文章跑抽取。
 
     「未被处理过」按 `runs` 台账算，不按 `triples` 有没有行算：抽到 0 条也是一次
     已经付过费的处理，必须记下来，否则下次重跑还要再付一次。
+
+    `workers > 1` 时并发抽：抽取是网络等待（一篇约 100 秒，95% 在等模型），
+    串行 500 篇要 15 小时。每个线程拿一个独立的后端实例（dspy 的 LM 状态不共享），
+    写库仍在主线程做，保持「每篇单独提交」的语义。
     """
     sql = """
         SELECT * FROM articles a
@@ -226,12 +231,19 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
     rows = conn.execute(sql, (extractor.name,)).fetchall()
     if only_ids:
         rows = [r for r in rows if r["article_id"] in only_ids]
+    if shard:
+        # "i/n"：按 article_id 的哈希取模分片，让 n 个进程互不重叠地抽同一批文章。
+        # 线程池在本机跑不动（dspy 的全局状态多线程互锁，实测整批卡死），
+        # 但多进程没有这个问题——每个进程是干净的 dspy 环境。
+        idx, _, total_n = shard.partition("/")
+        idx, total_n = int(idx), int(total_n)
+        rows = [r for r in rows if int(r["article_id"][:8], 16) % total_n == idx]
     if limit:
         rows = rows[:limit]
 
-    total = 0
-    ok = 0
-    failed: list[tuple[str, str]] = []
+    # 1) 预筛：正文闸 + 组装 Article。这一步不花钱，先在主线程做完；
+    #    线程池里只留「等模型」这一段，出错也好定位。
+    prepared: list[tuple[object, Article]] = []
     for row in rows:
         md_path = ROOT / row["markdown_path"]
         if not md_path.exists():
@@ -249,7 +261,6 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
             if verbose:
                 print(f"      {row['article_id'][:8]}  跳过：{verdict.reason}", flush=True)
             continue
-        body = verdict.body
         article = Article(
             article_id=row["article_id"],
             source=row["source"],
@@ -260,23 +271,53 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
             lang=row["lang"] or "en",
             license=row["license"] or "",
             authors=[],
-            body=body,
+            body=verdict.body,
             content_sha1=row["content_sha1"] or "",
             simhash=simhash_int(row["simhash"]),
             raw_path="",
             markdown_path=row["markdown_path"],
         )
-        try:
-            triples: list[Triple] = extractor.extract(article)
-        except Exception as exc:
-            # 单篇失败不能拖垮整批：2000 篇要跑几十小时，中途一次超时或限流
-            # 就让整轮白跑是不可接受的。不记台账，下次重跑会再试这一篇。
-            failed.append((row["article_id"], f"{type(exc).__name__}: {exc}"))
+        prepared.append((row, article))
+
+    # 2) 抽取
+    extracted: dict[str, list[Triple]] = {}
+    errors: dict[str, str] = {}
+    if workers <= 1 or len(prepared) <= 1:
+        for _row, article in prepared:
+            try:
+                extracted[article.article_id] = extractor.extract(article)
+            except Exception as exc:  # noqa: BLE001  单篇失败不拖垮整批
+                errors[article.article_id] = f"{type(exc).__name__}: {exc}"
+    else:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        # 每个 worker 一个后端实例：KGGen 内部持有 dspy 的 LM，实例不共享更安全
+        pool = [extractor] + [type(extractor)() for _ in range(workers - 1)]
+        with ThreadPoolExecutor(max_workers=workers) as pool_ex:
+            futures = {
+                pool_ex.submit(pool[i % workers].extract, article): article
+                for i, (_row, article) in enumerate(prepared)
+            }
+            for fut in as_completed(futures):
+                article = futures[fut]
+                try:
+                    extracted[article.article_id] = fut.result()
+                except Exception as exc:  # noqa: BLE001
+                    errors[article.article_id] = f"{type(exc).__name__}: {exc}"
+
+    # 3) 写库：主线程、逐篇提交
+    total = 0
+    ok = 0
+    failed: list[tuple[str, str]] = []
+    for _row, article in prepared:
+        if article.article_id in errors:
+            failed.append((article.article_id, errors[article.article_id]))
             print(
-                f"      {row['article_id'][:8]}  抽取失败 -> {type(exc).__name__}: {exc}",
+                f"      {article.article_id[:8]}  抽取失败 -> {errors[article.article_id]}",
                 flush=True,
             )
             continue
+        triples = extracted.get(article.article_id, [])
         ok += 1
         # 记者署名与媒介出处不该进图：不对它们做归一，否则「钟旖」这种度为 1 的
         # 节点会一篇一个地累积，把中心度和社区发现一起拉偏。
@@ -304,7 +345,7 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
             )
 
     conn.commit()
-    if rows and verbose:
+    if prepared and verbose:
         print(
             f"      本轮：成功 {ok} 篇，失败 {len(failed)} 篇，新增三元组 {total} 条",
             flush=True,
@@ -313,7 +354,7 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
         print(f"      失败的文章没有记账，下次 build 会自动重试；本次失败 {len(failed)} 篇：", flush=True)
         for aid, err in failed[:5]:
             print(f"        {aid[:8]}  {err[:90]}", flush=True)
-    if rows and total == 0 and verbose:
+    if prepared and total == 0 and verbose:
         print(
             "      注意：这批文章一条三元组也没抽出来。常见原因是模型端点不可用、"
             "或 KGGen 的 JSON 输出被截断（可调 NEWSKG_KGGEN_MAX_TOKENS）。"

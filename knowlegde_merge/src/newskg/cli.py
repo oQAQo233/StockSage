@@ -81,7 +81,7 @@ def cmd_build(args) -> int:
     conn = _open_db(args.db)
     print(f"[build] 后端 = {extractor.name}")
     try:
-        total = build_graph(conn, extractor, limit=args.limit)
+        total = build_graph(conn, extractor, limit=args.limit, workers=args.workers, shard=args.shard or None)
     except Exception as exc:  # noqa: BLE001  额度/网络问题给一句人话，不吐 traceback
         print(f"[build] 失败：{exc}", file=sys.stderr)
         conn.close()
@@ -349,6 +349,17 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("build", help="用 KGGen 抽三元组建图")
     _add_db_option(p)
     p.add_argument("--limit", type=int, default=None, help="最多处理多少篇")
+    p.add_argument(
+        "--workers",
+        type=int,
+        default=int(os.getenv("NEWSKG_BUILD_WORKERS", "1")),
+        help="并发抽取的线程数，默认 1（串行）。抽取 95%% 时间在等模型，4 路约快 3 倍",
+    )
+    p.add_argument(
+        "--shard",
+        default=os.getenv("NEWSKG_BUILD_SHARD", ""),
+        help='分片，形如 "0/4"：把待抽文章按 id 哈希分成 4 份，本进程只做第 0 份',
+    )
     p.set_defaults(func=cmd_build)
 
     p = sub.add_parser("export", help="导出图")

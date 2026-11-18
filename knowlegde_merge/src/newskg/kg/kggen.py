@@ -28,6 +28,27 @@ class KGGenExtractor:
                 "装好后用 PYTHONPATH=src;.kgvenv 运行（kg-gen 放在独立环境里）。"
             ) from None
 
+        # 关掉 dspy 的磁盘缓存：每篇文章的提示词都不一样，缓存几乎不会命中，
+        # 但多线程同时写缓存文件会互相等锁——实测 6 路并发时整批卡死 30 分钟。
+        # 需要缓存时设 NEWSKG_KGGEN_CACHE=1。
+        # 单次请求的超时：网关在并发过高时会把请求挂起而不返回，
+        # 不设上限的话整批就卡死在那里（实测 4 路并发挂过 18 分钟）。
+        # 超时后这一篇记为失败、不记账，下次 build 自然重试。
+        try:
+            import litellm
+
+            litellm.request_timeout = int(os.getenv("NEWSKG_LLM_TIMEOUT", "600"))
+        except Exception:  # noqa: BLE001
+            pass
+
+        if os.getenv("NEWSKG_KGGEN_CACHE", "0") != "1":
+            try:
+                import dspy
+
+                dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=True)
+            except Exception:  # noqa: BLE001  老版本 dspy 没有这个接口，不影响主流程
+                pass
+
         # 三个 NEWSKG_KGGEN_* 都是可选的：不设就沿用 NEWSKG_LLM_*，只有一个 key 的场景
         # 不用再配一遍。默认模型用 LLM.model（而不是 gpt-4o-mini），否则接的是国产网关时
         # 模型名对不上，报的错会指向“模型不存在”，看起来像代码问题。

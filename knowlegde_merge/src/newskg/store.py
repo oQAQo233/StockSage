@@ -88,6 +88,11 @@ def connect(path: Path | str = DB_PATH) -> sqlite3.Connection:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
+    # 多进程分片跑抽取时会有 4 个进程同时写：WAL 让读不挡写，
+    # busy_timeout 让写等锁而不是直接抛 "database is locked"。
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
+    conn.execute("PRAGMA synchronous=NORMAL")
     conn.executescript(SCHEMA)
     _migrate(conn)
     return conn
