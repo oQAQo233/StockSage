@@ -1,4 +1,4 @@
-﻿"""新闻源适配器。
+"""新闻源适配器。
 
 每个源只需要实现 discover()，返回 ArticleStub 列表；
 「怎么抓正文」「怎么转格式」由上层统一处理，源之间不重复实现。
@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from .archive import ChinanewsArchive, IfanrDate
 from .base import Source
+from .epaper import CeDay, CnstockDay, ZqrbDay
 from .filters import FilteredSource, keyword_score, within_window
 from .fixtures import FixtureSource
 from .gdelt import GdeltSource
@@ -67,6 +68,10 @@ _REGISTRY: dict[str, object] = {
     "chinanews_day": ChinanewsArchive,
     "archive": ChinanewsArchive,
     "ifanr_day": IfanrDate,
+    # 按天归档的电子报（URL 带日期，见 epaper.py）
+    "zqrb_day": ZqrbDay,
+    "ce_day": CeDay,
+    "cnstock_day": CnstockDay,
     # 离线
     "fixtures": FixtureSource,
     "fixture": FixtureSource,
