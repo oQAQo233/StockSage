@@ -69,7 +69,7 @@
 
 ## 3. 已经做完、不需要重做的事
 
-### 3.1 代码（均已提交到本地 git，`e158e89`）
+### 3.1 代码（已提交并推送到 `c6f7784`）
 
 | 文件 | 内容 |
 |---|---|
@@ -270,7 +270,7 @@ git -C $m -c http.sslBackend=openssl push origin main
 ```
 
 - 仓库根是另一个项目（`stocksage`），本项目只在 `knowlegde_merge/` 子目录，**不要写到根目录**。
-- **当前有 1 个提交未推送**（`e158e89`），上次推的时候 GitHub TLS 被掐，需要补推。
+- **当前已推送**：`c6f7784`（GitHub `oQAQo233/StockSage` 的 `knowlegde_merge/` 子目录）。若后续推送报 TLS 错，等几分钟重试即可。
 - 不入库：`.env`、`out/`、`data/md/`、`data/raw/`、`.venv/`、`.kgvenv/`、`.tmp/`、`.nltk_data/`。
 
 ---
