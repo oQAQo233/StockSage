@@ -77,7 +77,7 @@ def cmd_fetch(args) -> int:
 
 def cmd_build(args) -> int:
     config.ensure_dirs()
-    extractor = build_extractor()
+    extractor = build_extractor(getattr(args, "backend", None))
     conn = _open_db(args.db)
     print(f"[build] 后端 = {extractor.name}")
     try:
@@ -346,9 +346,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_fetch)
 
-    p = sub.add_parser("build", help="用 KGGen 抽三元组建图")
+    p = sub.add_parser("build", help="用 KGGen（或直连 LLM）抽三元组建图")
     _add_db_option(p)
     p.add_argument("--limit", type=int, default=None, help="最多处理多少篇")
+    p.add_argument(
+        "--backend",
+        default=os.getenv("NEWSKG_BACKEND", ""),
+        help="抽取后端：kggen（默认，质量最好但一篇两次大请求）/ direct（一次小请求，快且稳）",
+    )
     p.add_argument(
         "--workers",
         type=int,

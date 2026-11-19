@@ -224,11 +224,14 @@ def build_graph(conn: sqlite3.Connection, extractor, limit: int | None = None,
         WHERE (a.duplicate_of IS NULL OR a.duplicate_of = '')
           AND NOT EXISTS (
               SELECT 1 FROM runs r
-              WHERE r.article_id = a.article_id AND r.extractor = ?
+              WHERE r.article_id = a.article_id
           )
         ORDER BY a.published_at DESC
     """
-    rows = conn.execute(sql, (extractor.name,)).fetchall()
+    # 不按 extractor 过滤：一篇文章被任何一个后端抽过就算处理完。
+    # 换后端重跑整批会把已经付过费的 41 篇再抽一遍，白花钱。
+    # 真要重抽，把 runs 里那几行删掉。
+    rows = conn.execute(sql).fetchall()
     if only_ids:
         rows = [r for r in rows if r["article_id"] in only_ids]
     if shard:

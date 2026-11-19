@@ -1,17 +1,26 @@
-"""建图后端：只用 KGGen。
+"""建图后端。
 
-早期版本同时带 `rule`（正则基线）和 `llm`（手写 prompt）两个后端，用来做三方对照。
-抽取方案定下来之后，这两个后端连同它们的对照实验一起删掉了——留下的只有结论：
-手写 prompt 的产出量被输出预算卡在每篇 25 条上下，而 KGGen 自带实体聚类、不设这个上限。
+两个后端：
+- `kggen`（默认）：KGGen，自带实体聚类，一篇两次大请求，质量最好但端点不稳时会挂住。
+- `llm-direct`：一次小请求拿三元组，稳、快，没有聚类，靠 `kg/entities.py` 规则归一。
+
+早期还有 `rule`（正则基线），抽取方案定下来后删掉了。
+用 NEWSKG_BACKEND 或 cli 的 `--backend` 选后端；台账里记 extractor 名，两种产出可以分开统计。
 """
 
 from __future__ import annotations
 
+import os
+
+from .direct import DirectExtractor
 from .kggen import KGGenExtractor
 
-__all__ = ["KGGenExtractor"]
+__all__ = ["KGGenExtractor", "DirectExtractor", "build_extractor"]
 
 
-def build_extractor() -> KGGenExtractor:
+def build_extractor(kind: str | None = None):
     """抽取器工厂。保留这层是为了让 cli / pipeline 只依赖工厂，不依赖具体类。"""
+    choice = (kind or os.getenv("NEWSKG_BACKEND", "kggen")).strip().lower()
+    if choice in ("direct", "llm-direct", "llm"):
+        return DirectExtractor()
     return KGGenExtractor()

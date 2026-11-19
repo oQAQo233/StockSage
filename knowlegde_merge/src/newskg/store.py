@@ -93,7 +93,14 @@ def connect(path: Path | str = DB_PATH) -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=30000")
     conn.execute("PRAGMA synchronous=NORMAL")
-    conn.executescript(SCHEMA)
+    # 多个进程同时启动时，SCHEMA 里的 DROP VIEW / CREATE VIEW 会撞车：
+    # 另一个进程刚建完，这边就报 'view v_triples already exists'。
+    # 两边跑的是同一份代码，定义一致，撞上了直接忽略即可。
+    try:
+        conn.executescript(SCHEMA)
+    except sqlite3.OperationalError as exc:
+        if "already exists" not in str(exc).lower():
+            raise
     _migrate(conn)
     return conn
 
