@@ -1,4 +1,4 @@
-﻿# 科技新闻知识图谱 · 阶段交付报告
+# 科技新闻知识图谱 · 阶段交付报告
 
 > 生成时间：2026-11-19 21:50（Asia/Shanghai）
 > 数据窗口：**2026-11-04 ~ 2026-11-11**（8 天）
@@ -215,6 +215,7 @@
 | `out/graph.json` | 节点/边（0.90 MB） |
 | `out/graph.cypher` | 可直接导入 Neo4j（0.76 MB） |
 | `out/graph.graphml` | Gephi / Cytoscape 可直接打开（0.95 MB） |
+| `out/graph_preview.png` | 度数最高 70 个实体的子图预览（`tools/render_graph.py` 生成） |
 
 ### 7.2 复现命令
 
