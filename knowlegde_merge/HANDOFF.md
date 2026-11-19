@@ -1,4 +1,4 @@
-# newskg 交接文档
+﻿# newskg 交接文档
 
 > 写于 2026-11-19 16:00（Asia/Shanghai）。上一轮会话太长、上下文被压缩，这份文档是唯一可靠的事实来源。
 > 新会话请**先读完第 4 节「必须先读的 10 条经验」再动手**，那一节能省掉 5 个小时的重复踩坑。
@@ -20,17 +20,20 @@
 
 ---
 
-## 2. 现状快照（2026-11-19 22:10 实测）
+## 2. 现状快照（2026-11-20 00:38 实测）
+
+> **抽取未完成**：430 篇里只有 71 篇抽完（全部 KGGen），354 篇待抽。
+> 原因与解法见 §9.7：端点只允许单路 KGGen，单篇 46~238 秒，全量约 18 小时。
 
 数据库：`out/kg.sqlite3`
 
 | 指标 | 数值 |
 |---|---|
-| 文章 | **430 篇**（判重丢弃 5 篇） |
-| 已抽取 | **425 篇** |
-| 待抽 | **0 篇** |
-| 三元组 | **3799 条**（去重后 3673，多源支持 93） |
-| 图规模 | **4576 节点 / 3799 边** |
+| 文章 | **430 篇**（判重丢弃 5 篇；语料抓取已完成） |
+| 已抽取 | **71 篇**（全部 kggen） |
+| 待抽 | **354 篇** |
+| 三元组 | **1310 条**（去重后 1294，多源支持 10） |
+| 图规模 | **1253 节点 / 1310 边**（部分数据） |
 | 已接的**按天归档**源 | **7 个**：`chinanews_day`、`ifanr_day`、`zqrb_day`、`ce_day`、`cnstock_day`、`most_day`、`ndrc_day` |
 | 覆盖日期（UTC，窗口内） | 11-04: 68、11-05: 63、11-06: 65、11-07: 47、11-08: 34、11-09: 40、11-10: 69、11-11: 36（另有 11-03: 3 篇） |
 | **缺** | 源 7/10（还差 3 个，原因与实测证据见 §8.5、§9.2、§9.6） |
@@ -606,6 +609,48 @@ foreach ($p in $procs) { $p.WaitForExit(540000) | Out-Null }
 
 ---
 
+## 9.7 【最重要】KGGen 卡死的真相：dspy 在下载价格表
+
+之前所有会话（包括我自己）都得出了错误结论：「KGGen 一篇要 93~200 秒、并发就挂、
+所以改用自写直连」。**这是误判。**
+
+用 `faulthandler` 抓卡住时的栈：
+
+```
+dspy/clients/model_metadata/__init__.py:63 in _load
+  → urllib.request.urlopen → http.client.read → ssl.py:read     ← 无限挂在这里
+  ← dspy/clients/costs.py:44 _estimate_cost
+  ← dspy/clients/execution.py:643 _price_result                  ← 每次调用后都算钱
+```
+
+**KGGen 每次调完模型，dspy 都要联网拉一份模型价格表**
+（`raw.githubusercontent.com/BerriAI/litellm/.../model_prices_and_context_window.json`）。
+这个域名在本机被墙，于是进程挂在 SSL 读上，而真正的模型请求早就返回了。
+同样的请求直接用 litellm 打，9.3 秒就回来。
+
+**解法（必须加，否则必挂）**：
+
+```powershell
+$env:LITELLM_LOCAL_MODEL_COST_MAP="true"   # 用 dspy 自带离线快照，不联网
+```
+
+加上之后：单篇 77 秒出 15 条三元组。
+
+### 其他三条实测约束
+
+1. **单篇耗时 ≈ 0.09×字数 + 60 秒**，同长度波动可达 3 倍。
+   实测：208 字/77 秒、634 字/77 秒、2515 字/238 秒。
+2. **端点只允许单路**。2/3/6/8/10 路并行全部 0 产出（进程活着、不报错、无限等待）；
+   单路稳定出结果。这是硬限制，调参绕不开。
+3. **进程必须被前台调用守着**。`Start-Process` 起完父调用立刻返回（放养），子进程会停住；
+   父调用 `WaitForExit()` 等到跑完则正常。
+4. **排序决定产出**。`build` 默认 `ORDER BY published_at DESC`，会先啃最新那天的长文
+   （单篇 6~8 分钟）。今晚改用 `.tmp/run_short_first.py`（按字数升序），
+   30 分钟完成 19 篇，约 40 篇/小时。
+
+**下一步就是挂一夜把剩下 354 篇抽完**（约 9 小时），命令见 REPORT.md §7.2。
+
+---
 ## 10. 给新会话的开场建议
 
 > 先读第 4 节和第 9 节，再确认 `runs` 台账和进程状态。
@@ -616,3 +661,4 @@ foreach ($p in $procs) { $p.WaitForExit(540000) | Out-Null }
 ```powershell
 $env:PYTHONPATH="src"; .\.venv\Scripts\python.exe -c "import sys;sys.path.insert(0,'src');from newskg.store import connect;c=connect();print('文章',c.execute('select count(*) from articles').fetchone()[0],'| 已抽',c.execute('select count(*) from runs').fetchone()[0],'| 三元组',c.execute('select count(*) from triples').fetchone()[0])"
 ```
+
