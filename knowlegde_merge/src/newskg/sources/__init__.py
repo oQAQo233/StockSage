@@ -22,6 +22,7 @@ from .epaper import CeDay, CnstockDay, ZqrbDay
 from .filters import FilteredSource, keyword_score, within_window
 from .fixtures import FixtureSource
 from .gdelt import GdeltSource
+from .govlist import MostDay, NdrcDay
 from .guardian import GuardianSource
 from .rss import RssSource
 from .tech import (  # noqa: F401
@@ -72,6 +73,9 @@ _REGISTRY: dict[str, object] = {
     "zqrb_day": ZqrbDay,
     "ce_day": CeDay,
     "cnstock_day": CnstockDay,
+    # 按天回溯的机构新闻列表（服务端分页，见 govlist.py）
+    "most_day": MostDay,
+    "ndrc_day": NdrcDay,
     # 离线
     "fixtures": FixtureSource,
     "fixture": FixtureSource,
