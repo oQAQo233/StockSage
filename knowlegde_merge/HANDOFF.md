@@ -35,7 +35,7 @@
 | 三元组 | **1275 条**（去重后 1259，多源支持 10） |
 | 图规模 | **1218 节点 / 1275 边**（部分数据） |
 | 已接的**按天归档**源 | **4 个**：`chinanews_day`、`ifanr_day`、`most_day`、`ndrc_day`（3 个电子报源已按要求删除） |
-| 覆盖日期（UTC，窗口内） | 11-04: 68、11-05: 63、11-06: 65、11-07: 47、11-08: 34、11-09: 40、11-10: 69、11-11: 36（另有 11-03: 3 篇） |
+| 覆盖日期（北京时间，含副本） | 11-04: 68、11-05: 56、11-06: 61、11-07: 43、11-08: 31、11-09: 39、11-10: 66、11-11: 30；窗口外 0 篇 |
 | **缺** | 源 7/10（还差 3 个，原因与实测证据见 §8.5、§9.2、§9.6） |
 
 ### 按源分布（实测）
@@ -390,7 +390,7 @@ out/                 kg.sqlite3、导出产物、日志
 | 2 | 「脱离终端启动就抽不出东西」原因未查清 | 不能无人值守长跑 | 用会话后台任务或前台分段 |
 | 3 | 直连后端密度只有 6~8 条/篇（KGGen 22 条） | 图偏稀 | 跑完可补一轮换窗口重抽取并集 |
 | 4 | 8 个新源的日期归档入口都还没探明 | T1 有不确定性 | 先做 2 个验证，再批量复制 |
-| 5 | 11-03 有 3 篇窗口外文章 | 统计时口径不一 | 要么删掉，要么报告里注明 |
+| 5 | ~~11-03 有 3 篇窗口外文章~~ | 实为时区假象：`published_at` 存 UTC，最早 2026-11-03T23:00:00Z = 北京 11-04 07:00 | 已按北京时间重算，窗口外 0 篇 |
 | 6 | GitHub 推送 TLS 偶尔被掐 | 代码没同步 | `git -c http.sslBackend=openssl push`，失败隔几分钟重试 |
 
 ---
@@ -664,6 +664,7 @@ $env:LITELLM_LOCAL_MODEL_COST_MAP="true"   # 用 dspy 自带离线快照，不�
 ```powershell
 $env:PYTHONPATH="src"; .\.venv\Scripts\python.exe -c "import sys;sys.path.insert(0,'src');from newskg.store import connect;c=connect();print('文章',c.execute('select count(*) from articles').fetchone()[0],'| 已抽',c.execute('select count(*) from runs').fetchone()[0],'| 三元组',c.execute('select count(*) from triples').fetchone()[0])"
 ```
+
 
 
 

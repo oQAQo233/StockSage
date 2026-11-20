@@ -24,6 +24,7 @@ from .gdelt import GdeltSource
 from .govlist import MostDay, NdrcDay
 from .guardian import GuardianSource
 from .rss import RssSource
+from .sina import SinaTechDay
 from .tech import (  # noqa: F401
     ALL_KEYS,
     EN_NAMES,
@@ -71,6 +72,8 @@ _REGISTRY: dict[str, object] = {
     # 按天回溯的机构新闻列表（服务端分页，见 govlist.py）
     "most_day": MostDay,
     "ndrc_day": NdrcDay,
+    # 新浪科技产经滚动（JSON 接口按页回溯，见 sina.py）
+    "sina_day": SinaTechDay,
     # 离线
     "fixtures": FixtureSource,
     "fixture": FixtureSource,
@@ -147,3 +150,4 @@ def build_source(name: str, **kwargs):
     if len(parts) == 1:
         return make(parts[0])
     return MultiSource([make(key) for key in parts], label=",".join(parts))
+
