@@ -300,8 +300,9 @@ def build_parser() -> argparse.ArgumentParser:
         default="fixtures",
         help=(
             "新闻源（默认 fixtures 样例）。科技源有 xinhua_tech / stdaily / chinanews_fin / chinanews_top / "
-            "zqrb / jiemian / eeo / tmtpost / leiphone / infoq / ifanr，"
-            "逗号分隔可同时跑多个，预设 tech（全部 11 个）/ tech-off（权威 7 个）/ tech-media（垂媒 4 个）/ all"
+            "jiemian / eeo / tmtpost / leiphone / infoq / ifanr，"
+            "按日归档有 chinanews_day / ifanr_day / most_day / ndrc_day，"
+            "逗号分隔可同时跑多个，预设 tech（全部）/ tech-off（权威 6 个）/ tech-media（垂媒 4 个）/ all"
         ),
     )
     p.add_argument("--query", help="检索词，GDELT/RSS 需要在标题里匹配")

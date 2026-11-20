@@ -43,7 +43,6 @@ FEEDS: dict[str, tuple[str, str, str]] = {
     "chinanews_top": ("https://www.chinanews.com.cn/rss/scroll-news.xml", "zh", "中新网·要闻"),
     "eeo": ("http://www.eeo.com.cn/rss.xml", "zh", "经济观察报"),
     "jiemian": ("https://a.jiemian.com/index.php?m=article&a=rss", "zh", "界面新闻"),
-    "zqrb": ("http://www.zqrb.cn/rss.xml", "zh", "证券日报"),
     # ---- 科技垂媒（保留专业向，剔除科普/社区向）----
     "infoq": ("https://www.infoq.cn/feed", "zh", "InfoQ 中文"),
     "ifanr": ("https://www.ifanr.com/feed", "zh", "爱范儿"),
@@ -206,7 +205,7 @@ def make_preset(name: str, keys: list[str]):
 
 #: 预设名 -> 该预设包含哪些源（RSS 与列表页混排，顺序即分额顺序）
 PRESETS: dict[str, list[str]] = {
-    "tech": list(ALL_KEYS),  # 全部 11 个（9 个 RSS + 2 个列表页）
+    "tech": list(ALL_KEYS),  # 全部源（RSS 与列表页混排）
     # 官方/报社：通讯社、党报集团、行业报
     "tech-off": [
         "xinhua_tech",
@@ -215,7 +214,6 @@ PRESETS: dict[str, list[str]] = {
         "stdaily",
         "eeo",
         "jiemian",
-        "zqrb",
     ],
     # 科技垂媒：专业向，已剔除科普/社区向（少数派、Solidot、IT之家、量子位）
     "tech-media": ["tmtpost", "leiphone", "infoq", "ifanr"],
@@ -232,6 +230,8 @@ def default_feeds() -> list[str]:
 def make_default_preset():
     """`--source tech` 的工厂：每次构造时读一次环境变量，便于不改代码换源集合。"""
     return lambda: TechFeed("tech", default_feeds())
+
+
 
 
 

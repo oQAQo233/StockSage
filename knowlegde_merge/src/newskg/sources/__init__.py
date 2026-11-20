@@ -18,7 +18,6 @@ from __future__ import annotations
 
 from .archive import ChinanewsArchive, IfanrDate
 from .base import Source
-from .epaper import CeDay, CnstockDay, ZqrbDay
 from .filters import FilteredSource, keyword_score, within_window
 from .fixtures import FixtureSource
 from .gdelt import GdeltSource
@@ -69,10 +68,6 @@ _REGISTRY: dict[str, object] = {
     "chinanews_day": ChinanewsArchive,
     "archive": ChinanewsArchive,
     "ifanr_day": IfanrDate,
-    # 按天归档的电子报（URL 带日期，见 epaper.py）
-    "zqrb_day": ZqrbDay,
-    "ce_day": CeDay,
-    "cnstock_day": CnstockDay,
     # 按天回溯的机构新闻列表（服务端分页，见 govlist.py）
     "most_day": MostDay,
     "ndrc_day": NdrcDay,
