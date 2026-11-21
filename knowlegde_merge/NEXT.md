@@ -1,70 +1,67 @@
-# 续跑说明（2026-11-20 23:48 收工）
+# 交付状态（2026-11-21 14:43）
 
-## 现在的状态
+## 已完成
 
 | 项 | 值 |
 |---|---|
 | 文章 | 541 篇（唯一稿 536，判重副本 5） |
-| 已抽 | **471 篇**（全部 kggen） |
-| 待抽 | **70 篇**（唯一稿 65） |
-| 三元组 | **10922 条** |
-| 图 | **8874 节点 / 10922 边**（已导出） |
+| 抽取 | **536 / 536 全部完成**（全部 kggen），待抽 **0** |
+| 三元组 | **13346 条** |
+| 图 | **10753 节点 / 13346 边**，已导出 |
 | 窗口 | 11-04 ~ 11-11，窗口外 0 篇 |
 
-按源（文章 / 已抽 / 三元组）：`chinanews_day` 348 / 314 / 7515、`sina_day` 147 / 142 / 3037、
-`ifanr_day` 37 / 6 / 176、`ndrc_day` 7 / 7 / 119、`most_day` 2 / 2 / 75。
+按源（文章 / 已抽 / 三元组）：`chinanews_day` 348 / 343 / 8662、`sina_day` 147 / 147 / 3216、
+`ifanr_day` 37 / 37 / 1274、`ndrc_day` 7 / 7 / 119、`most_day` 2 / 2 / 75。
 
 按天（北京时间）：11-04 93、11-05 83、11-06 77、11-07 51、11-08 37、11-09 55、11-10 90、11-11 55。
 
-## 剩下的 65 篇是什么
+## 产物
 
-全是长稿，**2000 字以上 62 篇、1000~2000 字 3 篇**，字数中位 **2617**，最长 8983。
+| 文件 | 内容 |
+|---|---|
+| `out/kg.sqlite3` | 全量库（文章、正文、三元组、抽取台账） |
+| `out/graph.json` | 图（10753 节点 / 13346 边），2.71 MB |
+| `out/graph.cypher` | Neo4j 导入脚本，2.21 MB |
+| `out/graph.graphml` | Gephi / yEd 可读，2.88 MB |
+| `REPORT.md` | 阶段交付报告（数字已按本次收工刷新） |
+| `.tmp/final_summary.txt` | 收尾器自动写的最终统计 |
 
-按 `0.09×字数+60` 秒估算，还需要 **6.4 小时**。单篇 4~8 分钟，单路。
+## 唯一没达成的目标：源 5/10
 
-## 明天怎么续跑
+还差 5 个。已验证可走的路子只剩两条：
 
-一口气跑完（自己反复重试，到 deadline 自停）：
+1. **门户 JSON 滚动接口**：新浪 `feed.mix.sina.com.cn/api/roll/get?lid=2515` 已跑通，
+   同类可试网易 / 腾讯 / 搜狐的 roll 接口；
+2. **部委老式服务端分页**：省级科技厅、行业协会、研究院所。
+
+已验证的死路（不要再试）：36氪（网关 404）、虎嗅（阿里云 WAF）、机器之心（SPA 空壳）、
+钛媒体（Nuxt 只吐 767 字符）、凤凰科技（翻页返回同一页）、量子位（WordPress 翻页失效）、
+界面/网易/环球网（列表无日期）、观察者网（翻页同一页）、IT之家/快科技（只保留最新屏）、
+RSS（只能吐最近 20~40 条，回不到 8 天前）。
+
+## 复现命令
 
 ```powershell
-$env:PYTHONPATH="src;.kgvenv"
-$env:LITELLM_LOCAL_MODEL_COST_MAP="true"
-$env:NEWSKG_DEADLINE="2026-11-21T09:00:00"
+# 抓取（某一天）
+$env:PYTHONPATH="src"; $env:NEWSKG_TOPIC_MAX_SCORED="600"
+.\.venv\Scripts\python.exe -m newskg.cli fetch --source sina_day --day 2026-11-04 --limit 500 --days 20
+
+# 抽取（跑完自动停）
+$env:PYTHONPATH="src;.kgvenv"; $env:LITELLM_LOCAL_MODEL_COST_MAP="true"
+$env:NEWSKG_DEADLINE="2026-11-21T17:30:00"
 .\.venv\Scripts\python.exe -u .tmp\run_until_done.py
-```
 
-只想跑一批（按字数升序，跑 10 篇）：
-
-```powershell
-$env:NEWSKG_BUDGET_SEC="600"; $env:NEWSKG_CAP="10"
-.\.venv\Scripts\python.exe -u .tmp\run_short_first.py
-```
-
-抽完导出（`graph.json` / `graph.cypher` / `graph.graphml`）：
-
-```powershell
+# 导出
 .\.venv\Scripts\python.exe -m newskg.cli export --db out/kg.sqlite3 --format all --out out
 ```
 
-## 今天做了什么
-
-1. 新增第 5 个源 `sina_day`（`src/newskg/sources/sina.py`）：
-   `feed.mix.sina.com.cn/api/roll/get?pageid=153&lid=2515&num=50&page=N`，
-   按 `ctime` 精确归日，8 天 288 条候选，按默认 tech/LLM≥6 入库 147 篇。
-   已注册、已推送 GitHub（`ff6965c`）。
-2. 删除 `src/newskg/sources/cac.py`（中央网信办源，未采纳）。
-3. 13:05~23:45 单路补抽，已抽从 73 推到 471（净增 402 篇，约 36 篇/小时）。
-4. 修正文档口径：`REPORT.md` / `HANDOFF.md` 全量刷新到收工数字；
-   §5 新增 5.4 节记录新浪 JSON 接口的实测结论。
-
 ## 必须记住的坑
 
-- **抽取必须以前台或受管方式运行**，脱离窗口的子进程会卡住不动。
-- `LITELLM_LOCAL_MODEL_COST_MAP="true"` 不能少，否则 dspy 去拉 litellm 价格表会卡死。
+- `LITELLM_LOCAL_MODEL_COST_MAP="true"` 不能少，否则 dspy 去拉 litellm 价格表会卡死在 ssl read。
 - 端点只允许**一条** KGGen 流并发，开 2 条就静默返回 0 条结果。
 - 抽取后端只能是 kggen，不要换成 llm-direct 赶吞吐。
-- 实测速率：250 字≈65 秒、640 字≈95 秒、746 字≈110 秒、1380 字≈110~160 秒、
-  2600 字≈4~8 分钟。
-- 有 6 篇零三元组，都是中新网 200~260 字的短讯（发射成功之类），属正常。
-- `run_until_done.py` 的 deadline 只在**每趟之间**检查，到点那一刻会先把当前这篇抽完；
-  要立刻停就 `Stop-Process` 掉 python 进程（未提交的那篇会保持待抽，不会留半条数据）。
+- 长早报（4000~6500 字）偶发整篇失败：模型把内容写进 `reasoning_content`、`text` 为空。
+  处理：删掉该篇的 `runs` 记录重抽（11-21 那 3 篇重抽后出了 11/40/29 条）。
+- 有 6 篇零三元组是中新网 200~260 字发射短讯，本来就抽不出关系，不是失败。
+- 镜像仓 `.tmp/StockSage` 推送时**用仓库自带的代理**（127.0.0.1:7897），不要清空代理；
+  直连 github 反而会超时。
