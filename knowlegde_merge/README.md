@@ -1,473 +1,353 @@
-# NewsKG
+# 新闻知识图谱 · 交接说明
 
-**新闻 → 统一 Markdown → 知识图谱 → 带引用的报告。**
+这份文档写给接手的人。读完你应该知道三件事：**我们做了什么**、**留下了什么**、**这些东西怎么用**。
+不需要先读代码。
 
-抓 11 个中文科技源，用 KGGen 抽 `(主体, 关系, 客体)` 三元组落进一个 SQLite 文件；再从「图上实体」和「段落全文」两路召回，把查询变成一份每句话都带来源编号的五节报告。
+---
 
-- 这是一个**流水线工程**，不是新闻 App。每一步都能单独跑、单独看产物、单独重来。
-- 核心目标是**可核对**：报告里每个结论都有 `[n]`，编号能点回原文；抽不到证据时它说"没有"，而不是编一个。
-- 只有一个外部依赖：**OpenAI 兼容的大模型端点**（抽取 + 写作）。没有 key 可以抓取、统计、看图，但跑不了 `build` 和 `ask`。
+## 1. 一句话概括
 
-## 能做什么 / 不能做什么
+抓 2026 年 11 月 4 日到 11 日的中文科技新闻，把每篇文章抽成一条条「主语—谓语—宾语」三元组，
+再给实体和关系打标签、把同一个东西的不同叫法合并、把一词多义拆开，
+最后得到一个可以用 SQL 或 Excel 直接查的知识图谱。
 
-| 能做 | 不能做 |
+---
+
+## 2. 整条流程
+
+```
+选源 → 抓取并统一成 Markdown → 抽三元组 → 后处理（4 步） → 导出
+```
+
+下面按顺序说每一步做了什么、为什么这么做。
+
+### 2.1 选源
+
+一共 5 个站，都是公开、能按日期往回翻的中文页面（不依赖 RSS，因为 RSS 只给最近几十条，翻不到历史）：
+
+| 代号 | 是什么 | 文章数 |
+| --- | --- | ---: |
+| `chinanews_day` | 中国新闻网（按天归档） | 348 |
+| `sina_day` | 新浪科技（产经滚动） | 147 |
+| `ifanr_day` | 爱范儿 | 37 |
+| `ndrc_day` | 国家发改委（新闻发布） | 7 |
+| `most_day` | 科技部 | 2 |
+
+选择思路：**中文 + 科技/产业 + 有日期归档**。后两个是政府口，篇数少，
+但里面的关系（监管、规划、试点）是商业媒体没有的，属于互补。
+
+- 时间窗口：2026-11-04 ~ 2026-11-11，共 8 天。
+- 抓到 **541 篇**，其中 **5 篇是同一篇稿子的转载**，用内容指纹（SimHash）+ 文本重叠率判掉了。
+  被判定重复的文章不会删除，而是记在 `articles.duplicate_of` 里指向它重复的那篇。
+
+### 2.2 抓取与统一格式
+
+每篇文章落两个文件：
+
+- `data/raw/`：抓下来的原始 HTML（留档，一般用不到）
+- `data/md/<article_id>.md`：统一后的 Markdown（**这个才是后面所有步骤的输入**）
+
+Markdown 的真实开头长这样：
+
+```markdown
+---
+article_id: 778585f73c8cd041
+source: chinanews_day
+url: https://www.chinanews.com.cn/aseaninfo/2026/11-04/10726318.shtml
+title: 中国与东盟南宁共探AI赋能防震减灾区域合作
+published_at: 2026-11-04T14:54:00Z
+lang: zh
+word_count: 779
+---
+
+# 中国与东盟南宁共探AI赋能防震减灾区域合作
+
+【东盟专线】中国与东盟南宁共探AI赋能防震减灾区域合作
+
+中新社南宁11月4日电 (韦佳秀)2026中国(广西)—东盟应急管理(防震减灾)合作与发展大会4日在南宁举办……
+```
+
+上面两行 `---` 之间那段叫 YAML 头，相当于文章的身份证（来源、原始链接、标题、时间、字数）。
+正文只保留标题和段落，导航栏、广告、版权尾巴都去掉了。
+
+**为什么要统一格式**：五个站的 HTML 结构完全不同。不先抹平成同一种 Markdown，
+后面抽三元组就要为每个站写一套解析，改一个站会连带改抽取逻辑。抹平之后，
+抽取只认一种输入。
+
+这些元信息同时也写进了数据库的 `articles` 表，用 SQL 查更方便。
+
+### 2.3 抽三元组
+
+用 **KGGen**（一个开源的图谱抽取工具）把每篇正文交给大模型，抽成 `(主语, 谓语, 宾语)`：
+
+```
+中国地震局局长王昆 --任职于--> 中国地震局
+中国地震局 --位于--> 南宁
+```
+
+- 共抽出 **13346 条**，`extractor` 字段全是 `kggen`。
+- 每条都记着 `article_id`（来自哪篇文章）、`published_at`（发布时间）、`source`（哪个站）。
+  **这是后面能回溯到原文的关键**，不要丢。
+
+### 2.4 抽完之后做的四件事
+
+原始三元组直接拿来用有三个问题：谓语太碎、实体名不统一、一个词有多个意思。
+所以做了四步后处理，结果都存在同一个库里：
+
+| 做了什么 | 为什么 | 结果存在哪 |
+| --- | --- | --- |
+| **关系归一** | 2210 个不同谓语太碎（"任职于/担任/出任"其实是同一种关系），不归类没法统计 | `predicate_map`、`rel_family` |
+| **实体类型** | 给每个实体打 12 类标签，才能按类筛选（只看公司、只看人物） | `entity_type` |
+| **实体合并** | 同一个东西的不同写法合成一个（"进博会" = "第九届中国国际进口博览会"），否则图是碎的 | `entity_merge` |
+| **实体消歧** | 一个词有多个意思时分清楚（苹果=公司 / 苹果=水果），否则查"苹果"会查出一堆水果 | `entity_sense`、`triple_sense` |
+
+几个数：谓语 2210 个归进 **25 个关系族**；实体 **10760** 个字符串合并后剩 **10408** 个（并入 352 个别名）；
+**34 个实体**被拆出 **64 个义项**（其中 20 个是多义词）。
+
+> 术语对齐一下，免得混：
+> **实体合并（实体解析）**= 同一个对象的不同叫法合成一个；**实体消歧**= 同一个词的不同意思分开。
+
+---
+
+## 3. 交接内容（重点看这节）
+
+### 3.1 一张表看完
+
+| 你要的东西 | 在哪 | 格式 |
+| --- | --- | --- |
+| 知识图谱本体 | `out/kg.sqlite3` | SQLite 数据库（单文件，6.7 MB） |
+| **一条边一行的宽表（推荐入口）** | `out/kg_labeled.csv` | CSV，13346 行 × 16 列，2.4 MB |
+| 图文件（导入 Neo4j / Gephi） | `out/graph.json`、`graph.cypher`、`graph.graphml` | JSON / Cypher / GraphML |
+| 原文 | `data/md/<article_id>.md` | Markdown + YAML 头 |
+| 给人看的清单 | `out/labels/` | Markdown / CSV |
+
+### 3.2 图谱本体：`out/kg.sqlite3`
+
+一个文件装下所有东西，用任何 SQLite 客户端（DB Browser for SQLite、DBeaver、Python 的 `sqlite3`）都能打开。
+
+核心就两张表：
+
+**`articles`（文章表，541 行）**
+
+| 字段 | 含义 |
 | --- | --- |
-| 抓 11 个中文科技源的正文，统一成 Markdown | 绕过反爬；被 403/405/429 挡下就放弃这个源 |
-| 抽三元组建图，导出 json / cypher / graphml | 保证抽取完整：一篇长文出 14~36 条关系，不是全量事实 |
-| 一句话查询 → 五节报告，逐句带引用 | 回答语料外的问题：查不到就返回 0 篇，不硬凑 |
-| 同一事件的多篇报道合并成一条时间线 | 语义聚类：换措辞、只共享一个实体时仍会拆成两条 |
-| 越界引用、对不上原文的数字 → 标出来 | 判断数字**用得对不对**（张冠李戴、口径不一致查不出） |
-| 生成单文件可交互图，断网可用 | 大规模：单机 SQLite，上万篇要换 Postgres 或图数据库 |
+| `article_id` | 文章编号，和文件名 `data/md/<article_id>.md` 一一对应 |
+| `source` | 来源站代号 |
+| `url` / `canonical_url` | 原始链接 / 去掉追踪参数后的链接 |
+| `title` | 标题 |
+| `published_at` | 发布时间（UTC，末尾带 `Z`） |
+| `markdown_path` | 统一后的 Markdown 路径 |
+| `word_count` | 字数 |
+| `duplicate_of` | 非空表示这篇是转载，值指向它重复的那篇的 `article_id` |
+
+**`triples`（三元组表，13346 行）**
+
+| 字段 | 含义 |
+| --- | --- |
+| `triple_id` | 这条边的唯一编号（16 位十六进制） |
+| `subject` / `predicate` / `object` | 主语 / 谓语 / 宾语 |
+| `article_id` | **来自哪篇文章**（对应 `data/md/<article_id>.md`） |
+| `published_at` / `source` | 那篇文章的发布时间与来源 |
+| `extractor` | 用哪个工具抽的（现在全是 `kggen`） |
+| `confidence` | 置信度，**目前是固定值 0.85，不是真实概率**，见 §5 |
+
+另外还有一个视图 `v_triples`，把「同一组三元组」合并成一行，附带：
+
+- `support`：有几篇**不同**文章支持它（数字越大越可信）
+- `first_seen` / `last_seen`：最早/最晚出现时间
+- `sources`：哪些站报道过
+
+**查数据时优先用 `v_triples`**：直接查 `triples` 会把同一件事的多次报道当成多条。
+
+### 3.3 原文怎么找
+
+每条三元组都有 `article_id`，按编号打开 `data/md/<article_id>.md` 就是原文：
+
+```
+triples.article_id = facdee47493e3be1
+        ↓
+data/md/facdee47493e3be1.md   ← YAML 头有原始链接和标题，正文里能搜到这句话
+```
+
+举个真实例子：三元组 `西迪·穆罕默德·本·阿卜杜拉大学 --位于--> 非斯` 的 `article_id` 是 `facdee47493e3be1`，
+打开 `data/md/facdee47493e3be1.md` 就能找到报道原文和出处链接。
+
+> **注意粒度**：我们只做到「能定位到文章」，没有精确到句子。如果要句子级，
+> 拿实体名在正文里做一次字符串匹配即可（实体名就是最好的关键词）。
+
+### 3.4 宽表：`out/kg_labeled.csv`（最省事的入口）
+
+把「三元组 + 四种标签」拼成了一张表，一行一条边，Excel 双击就能开。
+如果不想写 SQL，直接用它。
+
+| 列 | 含义 |
+| --- | --- |
+| `triple_id` | 边的编号 |
+| `subject` | 主语（原文里的写法） |
+| `subject_canonical` | 主语合并后的规范名（没合并过就和 `subject` 相同） |
+| `subject_type` | 主语类型（12 类之一） |
+| `predicate` | 谓语（原文里的写法） |
+| `rel_family` | 谓语归到哪个关系族（25 族之一） |
+| `object` / `object_canonical` / `object_type` | 宾语，同上 |
+| `published_at` / `source` | 时间、来源 |
+| `article_id` | 对应 `data/md/<article_id>.md` |
+| `subject_sense` / `subject_sense_label` | 主语的义项编号与名字（如 `苹果#1` / `公司`） |
+| `object_sense` / `object_sense_label` | 宾语的义项，同上 |
+
+真实的两行（省略了部分列）：
+
+```
+subject,subject_canonical,subject_type,predicate,rel_family,object,object_type
+西迪·穆罕默德·本·阿卜杜拉大学,非斯西迪·穆罕默德·本·阿卜杜拉大学,机构组织,位于,位于,非斯,地点行政
+叶玉如,叶玉如,人物,开发,研发,血液检测方法,技术概念
+```
+
+义项那四列**只有 34 个实体有值**，其它行是空的——这是正常的，只有多义词才需要消歧。
+
+### 3.5 给人看的清单：`out/labels/`
+
+| 文件 | 内容 |
+| --- | --- |
+| `SCHEMA.md` | 一页纸总览：多少实体、多少关系、多少类 |
+| `rel_families.md` | 25 个关系族的定义、包含哪些原始谓语、例子 |
+| `entity_types.md` | 12 个类型的定义、各有多少实体、代表实体 |
+| `merge_report.csv` | 352 条合并记录：谁并进了谁、用什么方法判的 |
+| `sense_report.csv` | 34 个实体的义项列表 |
+| `sense_edges.csv` | 339 条被判定过义项的边 |
+
+这些是**给人读的**，不是给程序读的。要数据用 §3.2 或 §3.4。
+
+### 3.6 图文件
+
+- `out/graph.json`：`{"nodes": [...], "edges": [...]}`，节点是 `{id, name}`，边是 `{source, target, predicate, confidence}`
+- `out/graph.cypher`：Neo4j 的 `MERGE` 语句，可直接执行
+- `out/graph.graphml`：Gephi / yEd 能直接打开
+
+⚠️ **这三个文件只存了「谁—谓词—谁」，不含实体类型、关系族、规范名**。
+要带标签的数据，用 `out/kg_labeled.csv`，或者按 §4 的 SQL 自己 join。
 
 ---
 
-## 1. 跑起来
+## 4. 三个常用查询
 
-需要 **Python 3.10+**（开发环境为 3.14 / Windows）。SQLite 需带 FTS5 与 trigram 分词器（3.34+，系统自带的基本都满足）。
+**① 查一个实体相关的所有边**（按支持文章数排序）
 
-```bat
-:: 一次性环境：主环境负责抓取/存储/可视化，kg-gen 单独装一个目录
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\pip install --target .kgvenv -r requirements-kggen.txt
-copy .env.example .env
-:: 编辑 .env：NEWSKG_LLM_API_KEY / _BASE_URL / _MODEL
+```sql
+SELECT subject, predicate, object, support
+FROM v_triples
+WHERE subject = '苹果' OR object = '苹果'
+ORDER BY support DESC
+LIMIT 20;
 ```
 
-`kg-gen` 会拖进 litellm、dspy、pyarrow、sentence-transformers，体积大且互相牵制，所以装进 `.kgvenv` 这个平铺目录而不是主环境；`run.cmd` 把 `src` 和 `.kgvenv` 一起挂到 `PYTHONPATH`。
+**② 看某个关系族有哪些边**
 
-```bat
-:: 1) 真实语料：抓 20 篇 → 抽 8 篇建图 → 导出 → 看图
-.\run.cmd fetch --source tech --limit 20 --days 3 --db out\tech.sqlite3
-.\run.cmd --db out\tech.sqlite3 build --limit 8
-.\run.cmd --db out\tech.sqlite3 export --format all
-.\.venv\Scripts\python.exe tools\view_graph_lite.py --db out\tech.sqlite3 --min-degree 2 --out out\graph.html
-
-:: 2) 问一句，拿一份报告
-.\run.cmd --db out\tech.sqlite3 ask "小米机器人在具身智能上有什么进展" --top 5 --debug
-
-:: 3) 不联网的端到端演示：8 篇合成样例 → 三元组 → 图（抽取仍要模型）
-.\run.cmd demo
+```sql
+SELECT t.subject, t.predicate, t.object
+FROM triples t
+JOIN predicate_map pm ON pm.predicate = t.predicate
+WHERE pm.family = '合作签约'
+LIMIT 20;
 ```
 
-`run.cmd` 只是包装：设 `PYTHONPATH=src;.kgvenv`、用 `.venv` 里的 Python、参数原样透传。等价于：
+**③ 按实体类型找度最高的实体**
 
-```bat
-set PYTHONPATH=src;.kgvenv
-.venv\Scripts\python.exe -m newskg.cli --db out\kg.sqlite3 <子命令> ...
+```sql
+SELECT et.entity, COUNT(*) AS n
+FROM entity_type et
+JOIN triples t ON t.subject = et.entity OR t.object = et.entity
+WHERE et.etype = '公司企业'
+GROUP BY et.entity
+ORDER BY n DESC
+LIMIT 10;
 ```
 
-> 必须用 `python -m newskg.cli`，包内部是相对导入；`python src/newskg/cli.py` 会直接报错。
+用 Python / pandas 读宽表：
 
----
+```python
+import pandas as pd
 
-## 2. 三块组成
-
-```
-        抓取入库                     建图                        问答成文
-┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────────┐
-│ 发现 → 抓正文 → 转 MD │   │ 逐篇 KGGen → 谓词归一 │   │ 实体链接 + 段落检索       │
-│  → 去重 → 入 SQLite   │──►│  → 实体归一 → triples │──►│  → RRF 融合 → 事件聚类    │
-│ (articles/paragraphs) │   │  → export 图          │   │  → 五节报告 + 引用校验    │
-└──────────────────────┘   └──────────────────────┘   └──────────────────────────┘
-```
-
-| 环节 | 实现 | 关键取舍 |
-| --- | --- | --- |
-| 发现 | `sources/`（RSS + 列表页） | 只要免 key、带时间的源；宁可少 10 个源，不要一个时间错乱的源 |
-| 过滤 | `sources/filters.py` | 时间窗 + LLM 题材打分（阈值 6）两道闸，先砍量再抓正文 |
-| 抓取 | `convert.py`（trafilatura） | 正文 >400 字符才算抓成功；抽不出就记失败，不猜 |
-| 统一 | `convert.py`（markitdown） | 一份正文两种表示：HTML→MD 供人读，纯文本供索引 |
-| 正文闸 | `quality.py` | 删页脚/推荐列表；只剩许可证与电话的残稿不进库 |
-| 去重 | `dedup.py` | URL 规范化 → 精确指纹 → SimHash → shingle Jaccard，四层递进 |
-| 抽取 | `kg/kggen.py` | 采用 Kggen |
-| 归一 | `kg/entities.py` | 字符层 → 别名表 → 泛化过滤，顺序不可换 |
-| 索引 | `textindex.py` | 以**段落**为单位建 FTS5，不索引句子 |
-| 检索 | `retrieve.py` | 图路 + 文本路双召回，RRF 只比名次 |
-| 成文 | `events.py` + `report.py` | 事实用模板、叙述用模型，两类内容分开生产 |
-
-
----
-
-## 3. 数据模型
-
-全部落在一个 SQLite 文件里，`out/` 可整体删除重跑。
-
-| 表 / 视图 | 一行是什么 | 写入者 |
-| --- | --- | --- |
-| `articles` | 一篇入库文章：标题、来源、URL、发布时间、Markdown 路径、正文、SimHash | `fetch` |
-| `paragraphs` | 一篇文章切成的一段（目标 420 字，上限 900），带段序号 | `ask`（首次查询时懒建） |
-| `paragraphs_fts` | `paragraphs` 的 FTS5 trigram 索引 | 同上 |
-| `triples` | 一条三元组：主体、谓词、客体、置信度、`article_id` | `build` |
-| `runs` | 一次抽取/抓取的运行记录，抽到 0 条也写，避免重复付费 | `pipeline` |
-| `v_triples` | 三元组 + 文章标题/来源/日期的联表视图 | 建库时创建 |
-
-设计上有三处值得说明：
-
-1. **检索单位是段落，不是句子。** 句子级检索需要句对齐，成本高、中文标点还会把一句话切断；段落保留上下文，又足够短到能塞进提示词。
-2. **三元组只记 `article_id`，不记句子。** 句子级溯源看着精确，实测却会挑出"只包含一半信息"的句子（例如只有主体、没有客体），比段落级更误导。报告因此按段摘录、按文章编号引用。
-3. **段落与索引由 `ask` 懒建。** 新抓的文章第一次被查询时才切段、建索引，`fetch` 不必为可能没人问的文章付索引成本。
-
----
-
-## 4. 查询与报告
-
-`ask` 把一句自然语言（20~300 字）变成一份 Markdown 报告。原则是**先把查询落到具体报道与事实上，再让模型组织语言**——不把整库塞进上下文。
-
-```
-查询
- ├─ 实体链接：别名表 → 子串 → 前缀（中文 3~6 字 / 英文首词）→ 模糊 0.82
- │     └─ 图路召回：从命中实体出发 2 跳，按距离衰减给文章打分
- ├─ 文本路召回：FTS5(trigram) 段落检索，两字词用 LIKE 兜底
- │     └─ 段落得分 = Σ (词长/2) × min(出现次数, 3)
- ├─ RRF 融合（k=60）→ 相关性下限（图路命中，或文本分 ≥ 首名 25%）
- ├─ 覆盖度守门：查询最具体的词全库都没有 → 返回 0 篇
- ├─ 事件聚类（并查集）
- └─ 证据包 out/reports/*.evidence.json
-        └─ 分节配置 → 背景 → 主体 → 时间线 → 趋势 → 摘要（最后写）
-```
-
-```bat
-:: 只检索，不花 token
-.\run.cmd --db out\tech.sqlite3 ask "华为和赛力斯在智能汽车上有什么合作" --dry-run
-
-:: 完整报告 + 附录（检索名次、事件簇、引用与数字校验）
-.\run.cmd --db out\tech.sqlite3 ask "攀枝花的微电网项目有什么特点" --top 5 --debug
-
-:: 不调用模型，用规则摘要排查检索
-.\run.cmd --db out\tech.sqlite3 ask "岚图汽车的销量" --no-llm
-
-:: 十个查询的检索体检（不生成报告）
-.\.venv\Scripts\python.exe tools\retrieval_smoke.py --db out\tech.sqlite3
-```
-
-| 参数 | 默认 | 说明 |
-| --- | --- | --- |
-| `--top` | 8 | 入选报道数上限 |
-| `--hops` | 2 | 图路跳数：1 只出直接关系，3 会把整张图吞进来 |
-| `--sections` | `configs/report_sections.json` | 换一套报告结构 |
-| `--out` | `out/reports/<slug>.md` | 报告路径 |
-| `--dry-run` | 关 | 只打印检索结果与证据包路径 |
-| `--no-llm` | 关 | 规则摘要，不产生费用 |
-| `--debug` | 关 | 报告末尾附检索过程表、事件簇、校验结果 |
-
-### 4.1 分节是配置，不是代码
-
-`configs/report_sections.json` 决定节的标题、顺序、字数、开关；代码只认识**选择器**：
-
-```json
-{ "id": "background", "title": "背景与现状", "words": 600,
-  "selector": "text_hits", "cite": true, "enabled": true }
-```
-
-| 选择器 | 取什么 | 谁写 |
-| --- | --- | --- |
-| `text_hits` | 文本路命中的段落 → 背景与现状 | 模型 |
-| `graph_clusters` | 按主体分组的图路事实 → 关键主体 | 模板 |
-| `chrono` | 事件簇 + 日期 → 时间线 | 模板 |
-| `outlook` | 事实 + 事件 → 趋势与不确定性（**不带引用**） | 模型 |
-| `top_facts` | 前面写好的正文 → 摘要 | 模型 |
-| `sources_all` | 来源表 | 模板 |
-
-两类内容分开生产，是刻意的：
-
-- **事实清单与时间线用模板**。编号、日期、主体名让模型复述一遍只会引入错误，模板输出还能逐行核对。
-- **叙述用模型，但摘要最后写**。摘要要概括正文，先写摘要等于让模型在不知道后面会写什么时先下结论，两者迟早打架。
-- **推断单独成节**。`outlook` 开头明确声明是推断，且不做引用校验——把推断混进事实里，是这个流程最容易出的错。
-
-### 4.2 事件聚类：同一件事只写一次
-
-一个发布会常有 3~5 家媒体同时报道。不聚类，报告就会把同一件事写五遍。四个形式信号，总分 ≥3 合并：
-
-| 信号 | 权重 | 判据 |
-| --- | --- | --- |
-| 近重复 | 3 | SimHash 汉明距离 ≤6（转载、改写） |
-| 标题重合 | 2 | 标题二元组 Jaccard ≥0.4 |
-| 共享实体 | 2 | 两篇共享 ≥2 个非泛化实体 |
-| 时间接近 | 1 | 发布时间相差 ≤48h（单靠它不合并） |
-
-只有并查集 + 两两比较，O(n²)。报告规模最多几十篇，够用；好处是当合并看起来不对时，能指出是哪条信号导致的。
-
-### 4.3 四道校验
-
-1. **逐句引用**：每句话必须带 `[n]`；生成后按节统计"引用几处 / 无引用几句"，终端打印。
-2. **越界引用**：`[99]` 这类超出来源表长度的编号会被标出来。
-3. **数字回查**：带单位或 4 位以上的数字逐个回查证据原文；找不到的列进附录。`18%` 与 `18 percent` 会先归一化，避免误报。
-4. **没覆盖就说没有**：查询里最具体的词在全库不存在时返回 0 篇，不用泛词凑答案。
-
-校验只作用于**模型写的节**。规则摘要和原文摘录本身就是清单，用"逐句带引用"去量只会制造噪声。
-
-### 4.4 实测
-
-语料：20 篇真实中文科技新闻，5 篇建图，101 条三元组，376 个段落，33 个主体。
-
-检索层，10 个查询（详见 `tools/retrieval_smoke.py`）：
-
-| 情况 | 查询数 | 结果 |
-| --- | --- | --- |
-| 语料有覆盖 | 8 | 正确报道**全部排第 1**，其中 7 个靠图路、1 个靠文本路 |
-| 语料没覆盖 | 2 | 返回 0 篇（固态电池产业链、钠离子电池量产） |
-
-报告层，4 个查询逐节核对：
-
-| 查询 | 入选 | 事件 | 观察 |
-| --- | --- | --- | --- |
-| 小米机器人在具身智能上有什么进展 | 3 篇 | 3 个 | 三篇属不同事件，未误合并 |
-| Northwind 和 Sunbelt 的合并（合成样例） | 2 篇 | **1 个** | 两篇同事件正确合并，时间线只一行 |
-| 攀枝花的微电网项目有什么特点 | 1 篇 | 1 个 | 单篇时背景节主动收短，不硬凑 |
-| 商务部对半导体出口管制是什么态度 | 2 篇 | 2 个 | 图路无事实时"关键主体"节如实留空 |
-
-四份报告的模型生成节均为 0 处越界引用；数字回查抓到 1 处（`18%` 对 `18 percent`），归一化后消失。
-
-这个规模只能验证"链路通不通"，**不是召回率**。语料扩大后要重测，并把 gold 文章集固化下来。
-
----
-
-## 5. 新闻源与时间
-
-当前 **11 个源，全部中文、全部免 key**：
-
-| 源 | 站点 | 性质 | 接法 |
-| --- | --- | --- | --- |
-| `xinhua_tech` | 新华网·科技 | 国家通讯社 | 列表页 |
-| `stdaily` | 科技日报 | 科技日报社 | 列表页 |
-| `chinanews_fin` / `chinanews_top` | 中新网·财经 / 要闻 | 通讯社 | RSS |
-| `zqrb` | 证券日报 | 报社 | RSS |
-| `jiemian` | 界面新闻 | 报社（上海报业集团） | RSS |
-| `eeo` | 经济观察报 | 报社 | RSS |
-| `tmtpost` | 钛媒体 | 商业科技媒体 | RSS |
-| `leiphone` | 雷锋网 | 商业科技媒体 | RSS |
-| `infoq` | InfoQ 中文 | 技术社区媒体 | RSS |
-| `ifanr` | 爱范儿 | 商业科技媒体 | RSS |
-
-预设：`tech`（11 个）、`tech-off`（7 个权威源）、`tech-media`（4 个垂媒）、`all`（再并入 gdelt / guardian / 通用 rss）。
-
-**回溯历史日期**：RSS 只保留最近两三天（实测 11-18 抓，最早只到 11-16），指定日期要走站点的日页归档。目前接了中新网：
-
-```bat
-.\.venv\Scripts\python.exe -m newskg.cli fetch --source chinanews_day --day 2026-11-04 --days 15 --limit 60
-```
-
-`chinanews_day` 解析 `scroll-news/YYYY/MMDD/news.shtml`，一天约 530 条、每条带分钟，站点时间是北京时，入库统一折成 UTC。`ifanr_day` 解析 `ifanr.com/date/YYYY/MM/DD`，一天 1~12 条，页面自带 `<time datetime>`（含时区）。其它源要回溯，得各加一个 `sources/archive.py` 里的 spec。
-
-**当前语料窗口：2026-11-04 ~ 2026-11-10（7 天）**，只收科技相关报道。已接的按天源：`chinanews_day`、`ifanr_day`；其余 9 个源仍是 RSS，只能覆盖最近两三天。
-
-**入选判据三条**，缺一不可：
-
-1. 能解析出条目（RSS 的 `<item>`，或列表页的「标题 + 链接」）；
-2. 条目**带时间**——没有时间，`--days` 会静默失效；
-3. 正文能被 trafilatura 抽出 >400 字符（这是筛源口径；运行时不会因为短正文就丢弃）。
-
-第 2 条淘汰率最高：人民网有日期但停在 2024 年，新浪停在 2018 年，搜狐停在 2016 年。「有日期」和「日期是新的」是两件事。
-
-四个时间坑，三个在 `sources/timestamps.py`（只有一份实现，体检器与入库共用），一个在 `sources/filters.py`：
-
-| 坑 | 症状 | 修法 |
-| --- | --- | --- |
-| 无时区的本地时间（证券日报） | 整源静默归零 | 原文无时区标记时按 `+08:00` 折算 |
-| 只有日期没有时刻（列表页源） | 打分池永远排最后 | `filters._fair_pool()` 按源轮流取 |
-| 北京时间标成 GMT（InfoQ 中文） | 时间超前 8 小时且无异常 | 折算后仍超前 >1h 就再纠一次 |
-| 页面元数据覆盖 feed 时间 | 全库时间变成 `T00:00:00Z` | `pick_published()` 优先选带钟点的 |
-
-最后一个最隐蔽：trafilatura 从正文页抽的 `date` 常常只有日期，而入库写的是 `ext.published_at or stub.published_at`，页面元数据优先，于是整库真实新闻的发布时间都被抹成当天零点。时间窗过滤在入库**之前**就完成了，所以流水线一路绿灯，只有按时间排序时才看得出来。
-
-源会改版、RSS 会下线，所以要能自己体检：
-
-```bat
-.\.venv\Scripts\python.exe tools\probe_sources.py
-.\.venv\Scripts\python.exe tools\probe_sources.py --url https://example.com/rss --label 某站
+df = pd.read_csv("out/kg_labeled.csv")
+# 公司企业之间的合作签约
+df[(df.subject_type == "公司企业") & (df.rel_family == "合作签约")][
+    ["subject", "object", "published_at"]
+].head(20)
 ```
 
 ---
 
-## 6. 抽取与归一
+## 5. 接手前必须知道的坑
 
-`build` 只有一种行为：把每篇文章交给 [KGGen](https://github.com/stair-lab/kg-gen)（NeurIPS'25），拿回它的关系集合，谓词归一后入库。
+这一节是**我们踩过的地方**，照着做能少走弯路。
 
-| 能力 | 手写 prompt | KGGen |
-| --- | --- | --- |
-| 实体聚类 | 自己维护别名表逐条对 | 生成时按语义归簇 |
-| 产出上限 | 受 `max_tokens` 约束，每篇 25 条封顶 | 不设上限，长文可出 100+ 条 |
-
-每篇置信度固定 0.85：KGGen 不返回逐条置信度，这个数字是占位，不要拿它排序。
-
-| 变量 | 默认 | 作用 |
-| --- | --- | --- |
-| `NEWSKG_KGGEN_MODEL` | 沿用 `NEWSKG_LLM_MODEL` | 抽取模型；不带 `provider/` 前缀时自动补 `openai/` |
-| `NEWSKG_KGGEN_BASE_URL` | 沿用 `NEWSKG_LLM_BASE_URL` | 端点 |
-| `NEWSKG_KGGEN_MAX_TOKENS` | 8192 | 单篇输出上限；调小会让长文 JSON 截断、整篇记 0 条 |
-
-本地实测（`qwen3.7-plus`）：单篇 14~36 条三元组；5 篇合起来 101 条、33 个主体；`demo` 的 8 篇合成样例出 75 条。失败会写 `runs`，不会反复重付费。
-
-谓词按语种分流：中文出中文谓词（`收购` / `发布` / `搭载`），英文出 `snake_case`（`acquired` / `located_in`）。中文实体配英文谓词会让边"半土半洋"，后续按谓词聚合也做不了。
-
-### 实体归一三层
-
-| 层 | 做什么 | 例子 |
-| --- | --- | --- |
-| 1 字符层 | NFKC、去包裹引号、压空白、去尾随标点 | `“梦想”号大洋钻探船` → `梦想号大洋钻探船` |
-| 2 别名表 | `data/aliases.json` 的写法合并 | `英伟达` → `NVIDIA`，`GTA 6` → `Grand Theft Auto VI` |
-| 3 泛化过滤 | 丢泛化宾语与自环 | 删 `(某公司, 推出, 产品)` 这类无信息边 |
-
-别名表手工维护，只做写法层消歧，不做上下文消歧。改完不必重跑抽取：
-
-```bat
-.\run.cmd --db out\tech.sqlite3 renormalize
-```
+1. **`confidence` 不是真概率**。13346 条全是 `0.85`，是抽取时写死的占位值，
+   不要拿它做阈值过滤。真正能用的可信度信号是 `v_triples.support`（几篇文章支持）。
+2. **关系族只有 25 个，兜底是「其他」**。1914 条边（14.3%）落在「其他」，
+   因为那些谓语（"完成""通过""打造"）的语义取决于上下文，硬塞进某个族就是错标。
+   用的时候记得把「其他」单独看，别当成一个真实关系。
+3. **别名合并是保守的，会漏**。只并了 352 个（330 组），因为候选对要逐对让模型判定，
+   时间不够没判完。**没判过的不会被合并**——所以是"漏并"，不是"错并"。
+   如果发现两个节点其实是同一个东西，先查 `entity_merge` 里有没有，没有就是没判到。
+4. **消歧只覆盖了 34 个实体**。只有出现次数多、且邻居类型明显不一致的实体才送去消歧，
+   其余实体的边没有义项信息。查冷门实体时不要期待 `*_sense` 列有值。
+5. **有 2 个实体是「未标注」**。类型判不出来就留空，我们没有拿「其他」去填充——
+   这两件事不一样：`未标注`=不知道，`其他`=确定是杂项。
+6. **语料只有 8 天、541 篇**。这是课程作业规模的数据，不要当成"科技新闻的全量"。
+   时间范围之外的、这 5 个站之外的，都没有。
+7. **抽取有损**。一篇长文一般出 10~30 条关系，不是文章里的全部事实。
+   图里没有，不代表原文没提。
+8. **时间统一存 UTC**（`2026-11-04T14:54:00Z`），北京时间要 +8 小时。
 
 ---
 
-## 7. 命令与环境变量
-
-| 子命令 | 干什么 | 典型用法 |
-| --- | --- | --- |
-| `init` | 建目录与空库 | `.\run.cmd init` |
-| `fetch` | 抓取 + 过滤 + 入库 | `--source tech --limit 20 --days 3` |
-| `build` | 用 KGGen 抽三元组建图 | `--limit 8` |
-| `export` | 导出图 | `--format all`（json/cypher/graphml） |
-| `stats` | 打印统计 | `.\run.cmd --db out\tech.sqlite3 stats` |
-| `dump` | 打印三元组 | `--limit 20` |
-| `renormalize` | 按别名表重写实体名 | 改完 `aliases.json` 后 |
-| `reset` | 清空数据 | `--keep-articles` 保留文章 |
-| `ask` | 查询 → 检索 → 报告 | `ask "小米机器人有什么进展" --top 5` |
-| `demo` | 端到端演示（样例 + KGGen） | `.\run.cmd demo` |
-
-| 环境变量 | 默认 | 作用 |
-| --- | --- | --- |
-| `NEWSKG_LLM_BASE_URL` / `_API_KEY` / `_MODEL` | DeepSeek 官方 | 抽取与写作共用端点 |
-| `NEWSKG_TOPIC_MODEL` | 同抽取模型 | 题材打分（可用更便宜的模型） |
-| `NEWSKG_TOPIC_THRESHOLD` | 6 | 题材分数阈值 |
-| `NEWSKG_TECH_FEEDS` | 全部 11 个 | 覆盖 `tech` 预设成员（逗号分隔注册名） |
-| `NEWSKG_POLITE_DELAY` | 1.0 | 同域名抓取间隔（秒） |
-| `NEWSKG_MAX_BODY_CHARS` | 12000 | 单篇正文截断长度 |
-| `NEWSKG_MIN_BODY_CHARS` | 150 | 正文低于此字数拒收（页脚残稿、付费墙残页） |
-
----
-
-## 8. 产物与目录
+## 6. 目录结构
 
 ```
-knowlegde_merge/
-├─ run.cmd                   包装脚本（PYTHONPATH + .venv + 参数透传）
-├─ requirements.txt          抓取/转换/存储依赖（6 个库）
-├─ requirements-kggen.txt    抽取依赖，装进 .kgvenv
-├─ .env.example              端点模板（不要提交真 key）
-├─ src/newskg/
-│  ├─ cli.py                 10 个子命令
-│  ├─ config.py              路径、限速、阈值、.env 加载
-│  ├─ models.py              ArticleStub / Article / Triple
-│  ├─ sources/               发现层：tech.py、html_list.py、timestamps.py、filters.py、topic_llm.py
-│  ├─ convert.py             抓 HTML → 正文 → Markdown
-│  ├─ dedup.py               四层去重
-│  ├─ pipeline.py            process_stub / ingest / build_graph
-│  ├─ store.py               建表、统计、三种图导出
-│  ├─ textindex.py           段落切分 + FTS5 trigram 索引
-│  ├─ retrieve.py            实体链接 + 双路召回 + RRF + 证据包
-│  ├─ events.py              事件聚类（并查集）
-│  ├─ report.py              证据包 → 五节报告 + 引用/数字校验
-│  ├─ llm_client.py          最小 OpenAI 兼容客户端
-│  └─ kg/
-│     ├─ kggen.py            KGGen 适配（唯一抽取后端）
-│     ├─ base.py             抽取器协议、谓词归一、篇内去重
-│     └─ entities.py         实体归一
-├─ configs/report_sections.json   报告分节配置
-├─ tools/                    看、查文章、溯源、源体检、检索体检
+knowledge_merge/
 ├─ data/
-│  ├─ fixtures/              8 篇合成 HTML（demo 用，勿当真实新闻引用）
-│  ├─ md/                    已入库文章的 Markdown（build 从这里读正文）
-│  └─ aliases.json           实体别名表
-├─ .kgvenv/                  kg-gen 独立环境（gitignore，按 §1 自建）
-└─ out/                      SQLite、图、报告、打分缓存（可整体删除）
+│  ├─ md/              # 统一后的 Markdown（<article_id>.md），抽取的输入
+│  └─ raw/             # 原始 HTML，留档用
+├─ out/
+│  ├─ kg.sqlite3       # ★ 知识图谱本体
+│  ├─ kg_labeled.csv   # ★ 一条边一行的带标签宽表
+│  ├─ graph.json/.cypher/.graphml   # 图文件（不含标签）
+│  └─ labels/          # 给人看的清单
+├─ src/newskg/
+│  ├─ sources/         # 各站的抓取实现
+│  ├─ convert.py       # HTML → 统一 Markdown
+│  ├─ dedup.py         # 转载判重
+│  ├─ kg/              # 三元组抽取（KGGen 后端）
+│  └─ schema/          # 后处理四步：关系归一、实体类型、合并、消歧
+├─ tools/              # 一些单独跑的脚本（看图、导宽表）
+└─ docs/               # 过程笔记（PIPELINE.md 是后处理四步的实现细节；
+                       # 其余是开发过程中的记录，已过时，仅供参考）
 ```
 
-`out/` 里的东西全部可删可重建：
-
-| 文件 | 来源 | 内容 |
-| --- | --- | --- |
-| `*.sqlite3` | `fetch` / `build` / `ask` | 文章、段落、三元组、运行记录 |
-| `graph.json` / `.cypher` / `.graphml` | `export` | 三种图格式 |
-| `*.html` | `tools/view_graph_lite.py` | 单文件可交互图，断网可用 |
-| `topic_scores.json` | `fetch` | 题材打分缓存（改阈值重跑不再付费） |
-| `rejected.jsonl` | `fetch` | 正文不合格被拒的记录（标题/URL/原因），跑大语料后靠它复核 |
-| `reports/*.md` | `ask` | 报告：摘要 / 背景 / 主体 / 时间线 / 趋势 / 来源 |
-| `reports/*.evidence.json` | `ask` | 证据包：入选报道、命中段落、图路事实、两路名次、事件簇 |
+**`src/newskg/schema/`** 是后处理那四步的代码，每一步都能单独重跑、断点续跑
+（模型调用的结果有缓存，重跑不会重复花钱）。细节见 `docs/PIPELINE.md`。
 
 ---
 
-## 9. 已知限制
+## 7. 如果想重跑（可选）
 
-**评测**
+环境：Python 3.10+（开发用 3.14）。抽取依赖 KGGen，装在单独的 `.kgvenv` 目录里。
 
-1. 没有任何量化评测。gold 集与评测脚本随 `rule` / `llm` 一起删除，现在只能看三元组数量、抽样读原文、看图上是否成立。§4.4 的实测是 10 个查询的定性结论，不是召回率。
-
-**检索**
-
-2. 两字词靠 `LIKE` 全表扫（trigram 索引不到两字词）。几百段没问题，上万篇要换 bigram 索引或向量检索。
-3. 事件聚类只看形式信号，没有正文语义相似度。换措辞、只共享一个实体的同一事件仍会被拆开。
-4. 中文查询切词只按连接词与语气词切分，不做分词。好处是"华为"不会被切成"华"，代价是会产生一些无用的 n-gram。
-
-**成文**
-
-5. 数字回查只验"在原文出现过"，不验用法。张冠李戴、口径不一致查不出来。
-6. 摘要基于模型写的正文再压缩，正文里的评价性措辞（"巨大潜力"这类）会被继承。逐句引用保证出处，保证不了措辞中性。
-7. 报告长度靠提示词约束（当前配置 4000 字总量），不是硬截断；复杂查询容易写短。
-
-**图谱**
-
-8. 只做写法层消歧（别名表），不解决上下文歧义（`Apple` / `apple` 仍会合并）。
-9. 中文品牌名会被翻成英文（`华为`→`Huawei`、`比亚迪`→`BYD`），尽管提示词要求保留原文。
-10. 英文谓词归一不彻底：中文有谓词词典，英文只有小别名表，`raises` / `raised` / `raised_on` 会变成三条边。
-11. KGGen 是黑盒：分块与聚类策略不可调，只能通过 `max_tokens` 间接影响产出。
-
-**工程**
-
-12. 单机 SQLite：上万篇要换 Postgres 或图数据库，`export cypher` 是迁移入口。
-13. 权威优先的代价是科技密度：11 个源里 7 个是通讯社/报社，题材打分要筛掉大量弱相关条目，20 篇入库靠的是 LLM 打分这一道闸。
-14. 列表页源只到"天"：新华网、科技日报给不出精确到分钟的发布时间。
-15. 近重复只抓逐字转载：SimHash 阈值 6，长文删掉一段就够不着（实测删一句距离 15）。所以聚类实际主要靠标题重合与共享实体，SimHash 只兜住通稿原文。
-16. 短快讯会被正文闸错杀：低于 150 字的合法快讯与页脚残稿在形式上分不开，宁可错杀。被拒的理由记在 `out/rejected.jsonl`，要复核直接看这个文件。
-
----
-
-## 10. 排错
-
-**`ImportError: The pyarrow installation is not built with support for 'dataset'`**
-
-`kg_gen` 导入时会连带加载 `pyarrow.dataset`。若机器上有应用控制策略（WDAC/AppLocker）拦了这个 `.pyd`，报错原文会带「应用程序控制策略已阻止此文件」。这是环境限制，不是代码问题；换 pyarrow 版本即可（实测 26.0.1 被拦、23.0.1 可用）：
-
-```bat
-python -m pip install --target .tmp\pa23 pyarrow==23.0.1
-rmdir /s /q .kgvenv\pyarrow .kgvenv\pyarrow-26.0.1.dist-info
-xcopy /e /i .tmp\pa23\pyarrow .kgvenv\pyarrow
-xcopy /e /i .tmp\pa23\pyarrow-23.0.1.dist-info .kgvenv\pyarrow-23.0.1.dist-info
-
-:: 验证
-set PYTHONPATH=src;.kgvenv
-.venv\Scripts\python.exe -c "import pyarrow.dataset; from kg_gen import KGGen; print('ok')"
+```powershell
+$env:PYTHONPATH="src;.kgvenv"
+.\.venv\Scripts\python.exe -m newskg.cli stats          # 看统计
+.\.venv\Scripts\python.exe -m newskg.cli export --format all
+.\.venv\Scripts\python.exe -m newskg.schema.cli --step report
+.\.venv\Scripts\python.exe tools\export_labeled_csv.py  # 重新生成宽表
 ```
 
-**`no such module` / 相对导入报错**
-
-用 `python -m newskg.cli`，不要直接跑 `src/newskg/cli.py`。
-
-**`no such module: fts5` 或 trigram 相关报错**
-
-SQLite 版本过旧（需 3.34+ 且编译时启用 FTS5）。`python -c "import sqlite3; print(sqlite3.sqlite_version)"` 确认；官方 Python 3.10+ 的 Windows 安装包默认满足。
-
-**`ask` 返回 0 篇**
-
-先看是不是真没覆盖：`--dry-run` 打印的实体链接与两路名次。查不到是设计行为（见 §4.3 第 4 条），不是报错。
+抓取和抽取需要 `.env` 里配一个 OpenAI 兼容的模型端点（`NEWSKG_LLM_BASE_URL` / `_API_KEY` / `_MODEL`）。
+没有 key 也能读库、导表、看图，只是不能重跑抽取。
 
 ---
 
-## 11. 声明
+## 8. 这个仓库不做什么
 
-- 新闻正文版权归原站点。本工程只做技术验证，不转载、不再分发正文。
-- 抓取按 `NEWSKG_POLITE_DELAY` 限速，**不绕过任何反爬**：被 403/405/429 挡下的源直接放弃。
-- `.env` 里的大模型 key 不要提交；仓库只保留 `.env.example`。
-- `data/fixtures/` 是合成样例，不是真实新闻，不能当语料引用。
-
-
-
-
-
+- **不做报告生成**：这里是"到知识图谱为止"的仓库。把图变成一篇给人读的文章、
+  按自然语言提问检索，那是下游的事，相关代码已经移除了。
+- **不做实时更新**：语料是一次性抓的固定窗口，没有定时任务。
+- **不做多语言**：只有中文语料，英文实体（Apple、NVIDIA）是原文里的写法，没有做翻译对齐。

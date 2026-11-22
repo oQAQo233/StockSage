@@ -219,63 +219,6 @@ def cmd_demo(args) -> int:
     return 0
 
 
-def cmd_ask(args) -> int:
-    """查询 → 检索 → 报告。
-
-    M1 的输出只有「摘要 + 来源」两节，够用来判断召回对不对、引用能不能落回报道。
-    """
-    from . import report, retrieve, textindex
-
-    config.ensure_dirs()
-    conn = _open_db(args.db)
-
-    print(f"[ask] 查询：{args.query}")
-    textindex.index_pending(conn)
-    pack = retrieve.retrieve(conn, args.query, top=args.top, hops=args.hops)
-
-    if not pack["candidates"]:
-        print("[ask] 没有找到相关报道。可能原因：语料没覆盖这个主题，或查询里的实体图上没有。")
-        print("      可以换更具体的说法，或先抓取相关来源。")
-        conn.close()
-        return 1
-
-    print()
-    print(f"{'#':<3}{'图':<4}{'文':<4}{'融合':<8} 文章")
-    for i, c in enumerate(pack["candidates"], start=1):
-        print(
-            f"{i:<3}{c['graph_rank'] or '—':<4}{c['text_rank'] or '—':<4}"
-            f"{c['score']:<8.4f} {c['title'][:34]}"
-        )
-        if c["graph_hits"]:
-            print(f"     命中实体：{'、'.join(c['graph_hits'])}")
-
-    ev_path = retrieve.save_evidence(pack, config.REPORTS)
-    print(f"\n[evidence] {ev_path}")
-
-    if args.dry_run:
-        print("[ask] --dry-run：只检索，不生成报告")
-        conn.close()
-        return 0
-
-    cfg = report.load_config(Path(args.sections) if args.sections else None)
-    md, stats = report.render(pack, cfg, use_llm=not args.no_llm, debug=args.debug)
-
-    out = Path(args.out) if args.out else (config.REPORTS / (ev_path.stem.replace(".evidence", "") + ".md"))
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(md, encoding="utf-8")
-
-    print(f"[report] {out}")
-    for sid, s in (stats.get("sections") or {}).items():
-        line = f"  [{sid}] 引用 {s['cited']} 处，无引用的句子 {s['uncited']} 句"
-        if s["out_of_range"]:
-            line += f"，越界引用 {s['out_of_range']}"
-        if s["unsupported"]:
-            line += f"，证据里没有的数字 {s['unsupported']}"
-        print(line)
-    conn.close()
-    return 0
-
-
 def _add_db_option(parser: argparse.ArgumentParser) -> None:
     """让 --db 既能写在子命令前，也能写在子命令后。"""
     parser.add_argument("--db", default=argparse.SUPPRESS, help="SQLite 路径，默认 out/kg.sqlite3")
@@ -284,7 +227,7 @@ def _add_db_option(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="newskg",
-        description="新闻 → 统一 Markdown → 知识图谱 → 带引用的报告",
+        description="新闻 → 统一 Markdown → 知识图谱",
     )
     parser.add_argument("--db", help="SQLite 路径，默认 out/kg.sqlite3")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -392,18 +335,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_db_option(p)
     p.add_argument("--keep-articles", action="store_true")
     p.set_defaults(func=cmd_reset)
-
-    p = sub.add_parser("ask", help="按一句话查询检索报道并生成报告（五节 + 来源）")
-    _add_db_option(p)
-    p.add_argument("query", help="自然语言查询，例如「小米机器人在具身智能上有什么进展」")
-    p.add_argument("--top", type=int, default=8, help="入选报道数上限（默认 8）")
-    p.add_argument("--hops", type=int, default=2, help="图路扩展跳数（默认 2）")
-    p.add_argument("--out", help="报告路径（默认 out/reports/<slug>.md）")
-    p.add_argument("--sections", help="报告结构配置（默认 configs/report_sections.json）")
-    p.add_argument("--dry-run", action="store_true", help="只检索，不生成报告")
-    p.add_argument("--no-llm", action="store_true", help="不调用模型，用规则摘要（调试用）")
-    p.add_argument("--debug", action="store_true", help="在报告里附检索过程")
-    p.set_defaults(func=cmd_ask)
 
     p = sub.add_parser("demo", help="端到端演示（样例语料 + KGGen，需要模型端点）")
     _add_db_option(p)
