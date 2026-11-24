@@ -1,0 +1,353 @@
+﻿alias,canonical,method,score,decided_by,evidence
+2亿像素主摄,2 亿像素主摄,norm_key,0.98,rule,归一 key=2亿像素主摄
+CCF ChinaSoft,2026 CCF中国软件大会,seed_alias,1.0,seed,--别名-->
+2026鸿蒙办公产业峰会,2026 鸿蒙办公产业峰会,norm_key,0.98,rule,归一 key=2026鸿蒙办公产业峰会
+中国多智能体应用大会,2026中国多智能体应用大会,closure,1.0,rule,并查集传递闭包
+2026,2026年,llm,0.85,llm,数值度量/数值度量
+乌镇峰会,2026年世界互联网大会乌镇峰会,seed_alias,1.0,seed,--简称-->
+ISBPLM2026,2026生物质精炼、造纸和木质纤维素材料国际研讨会,seed_alias,1.0,seed,--简称-->
+直通乌镇全球互联网大赛,2026直通乌镇全球互联网大赛,closure,1.0,rule,并查集传递闭包
+PHIIDF2026,2026菲尼克斯电气创新与产业发展论坛,seed_alias,1.0,seed,--简称-->
+CES Innovation Awards,2027 年度创新奖,seed_alias,1.0,seed,--又称-->
+360集团,360,norm_key,0.98,rule,归一 key=360
+3D打印,3D 打印,norm_key,0.98,rule,归一 key=3D打印
+第三代合作伙伴计划,3GPP,closure,1.0,rule,并查集传递闭包
+五一视界,51WORLD,closure,1.0,rule,并查集传递闭包
+5G网络,5G,closure,1.0,rule,并查集传递闭包
+光热电站,5万千瓦光热电站,closure,1.0,rule,并查集传递闭包
+6G技术,6G,llm,0.85,llm,技术概念/技术概念
+6G网络,6G,llm,0.85,llm,技术概念/技术概念
+注意缺陷多动障碍,ADHD,seed_alias,1.0,seed,--又称-->
+第二代智能数字平台,ADP 2.0,closure,1.0,rule,并查集传递闭包
+AEB,AEB自动刹停,llm,0.85,llm,技术概念/技术概念
+AI技术,AI,llm,0.85,llm,技术概念/技术概念
+AI 眼镜,AI眼镜,norm_key,0.98,rule,归一 key=AI眼镜
+AI 系统,AI系统,norm_key,0.98,rule,归一 key=AI系统
+ACE,AI计算扩展,seed_alias,1.0,seed,--简称-->
+亚太经合组织,APEC,closure,1.0,rule,并查集传递闭包
+芳香烃受体,AhR,closure,1.0,rule,并查集传递闭包
+Anthropic PBC,Anthropic,llm,0.85,llm,公司企业/公司企业
+Apple 创作坊,Apple Creator Studio,seed_alias,1.0,seed,--别名-->
+Apple智能,Apple 智能,norm_key,0.98,rule,归一 key=Apple智能
+Arm公司,Arm,norm_key,0.98,rule,归一 key=Arm
+Axis C鞘,Axis C-Sheath电极导线导引鞘组,seed_alias,1.0,seed,--简称-->
+Bernd Holznagel,BerndHolznagel,norm_key,0.98,rule,归一 key=BerndHolznagel
+新海丰CJV6外贸航线,CJV6航线,seed_alias,1.0,seed,--又称-->
+CPO光电共封,CPO,llm,0.85,llm,技术概念/技术概念
+幕僚长,Chief of Staff,seed_alias,1.0,seed,--又称-->
+多芯粒,Chiplet,closure,1.0,rule,并查集传递闭包
+芯粒,Chiplet,seed_alias,1.0,seed,--又称-->
+Claude Opus5.5,Claude Opus 5.5,norm_key,0.98,rule,归一 key=ClaudeOpus5.5
+CoreWeave Inc,CoreWeave,llm,0.85,llm,公司企业/公司企业
+Directly Responsible Individual,DRI,closure,1.0,rule,并查集传递闭包
+DiPilot300,DiPilot 300,norm_key,0.98,rule,归一 key=DiPilot300
+行星成像的物理驱动学习,FLIP,closure,1.0,rule,并查集传递闭包
+GX1射频消融治疗仪国产版本,GX1治疗仪,closure,1.0,rule,并查集传递闭包
+智慧表情,Genmoji,seed_alias,1.0,seed,--别名-->
+16触点植入式脑深部神经刺激电极,HX16触点植入式脑深部神经刺激电极,llm,0.85,llm,产品型号/产品型号
+国际数据公司,IDC,closure,1.0,rule,并查集传递闭包
+IFA2026,IFA 2026,norm_key,0.98,rule,归一 key=IFA2026
+IOLMaster700,IOLMaster700眼科光学生物测量仪,seed_alias,1.0,seed,--简称-->
+首次公开发行,IPO,seed_alias,1.0,seed,--又称-->
+ChatGPT Images 2.6,Images 2.6,llm,0.85,llm,产品型号/产品型号
+GPT Images 2.6,Images 2.6,llm,0.85,llm,产品型号/产品型号
+Junction China2026国际极客嘉年华,Junction China 2026国际极客嘉年华,norm_key,0.98,rule,归一 key=JunctionChina2026国际极客嘉年华
+Know Your Agent,KYA,closure,1.0,rule,并查集传递闭包
+LLM模型,LLM,llm,0.85,llm,技术概念/技术概念
+LTO项目,Linear Tape-Open,seed_alias,1.0,seed,--全称-->
+M6,M6 芯片,llm,0.85,llm,产品型号/产品型号
+对比增强磁共振成像,MRI,closure,1.0,rule,并查集传递闭包
+微环调制器,MRM,closure,1.0,rule,并查集传递闭包
+Mobile Token,MT,closure,1.0,rule,并查集传递闭包
+AICUBE,MTT AICUBE,seed_alias,1.0,seed,--简称-->
+MoE模型,MoE,llm,0.85,llm,技术概念/技术概念
+Muse,Muse智能体,llm,0.85,llm,产品型号/产品型号
+NeoHorse系列,NeoHorse,llm,0.85,llm,产品型号/产品型号
+一人有限责任公司,OPC,closure,1.0,rule,并查集传递闭包
+星芒,OSTA星芒,llm,0.85,llm,公司企业/公司企业
+聚烯烃弹性体,POE塑料,seed_alias,1.0,seed,--又称-->
+PS,Photoshop,seed_alias,1.0,seed,--简称-->
+千问Qwen3.6-35B-A3B,Qwen3.6-35B-A3B,llm,0.85,llm,产品型号/产品型号
+区域全面经济伙伴关系协定,RCEP,closure,1.0,rule,并查集传递闭包
+RoboScience机器科学,RoboScience,llm,0.85,llm,公司企业/公司企业
+阅光宝盒,SBI Viewer,seed_alias,1.0,seed,--别名-->
+三呆科技,Sand.ai,seed_alias,1.0,seed,--别名-->
+豆包 Seedream 5.5,Seedream 5.5,llm,0.85,llm,产品型号/产品型号
+Siri AI,Siri,llm,0.85,llm,产品型号/产品型号
+Stellantis 集团,Stellantis,norm_key,0.98,rule,归一 key=Stellantis
+Swift学生挑战赛,Swift Student Challenge,seed_alias,1.0,seed,--又名-->
+硅通孔,TSV,seed_alias,1.0,seed,--又称-->
+亚洲四维地形国际研究计划,TopoAsia,closure,1.0,rule,并查集传递闭包
+Vercise Genus,Vercise Genus脑深部神经刺激系统,seed_alias,1.0,seed,--简称-->
+WFL车铣技术公司,WFL,closure,1.0,rule,并查集传递闭包
+全球网络峰会,Web Summit,seed_alias,1.0,seed,--别名-->
+温特图尔发动机,Win-GD,seed_alias,1.0,seed,--又称-->
+Balance,amazfit Balance 3,seed_alias,1.0,seed,--简称-->
+载人电动垂直起降飞行器,eVTOL,closure,1.0,rule,并查集传递闭包
+iOS开发者Beta版,iOS 开发者 Beta 版,norm_key,0.98,rule,归一 key=iOS开发者Beta版
+一加 Ace7,一加 Ace 7,norm_key,0.98,rule,归一 key=一加Ace7
+一加 Ace7 Pro,一加 Ace 7 Pro,norm_key,0.98,rule,归一 key=一加Ace7Pro
+一扫多筛AI技术,一扫多筛,closure,1.0,rule,并查集传递闭包
+万州,万州区,closure,1.0,rule,并查集传递闭包
+万盛经开区,万盛,closure,1.0,rule,并查集传递闭包
+深海绿电高速公路,三山岛海上风电柔直输电工程,seed_alias,1.0,seed,--又称-->
+三里河工作室,三里河,llm,0.85,llm,机构组织/机构组织
+上汽,上汽集团,norm_key,0.98,rule,归一 key=上汽
+上海市,上海,llm,0.85,llm,地点行政/地点行政
+中国科学院上海光学精密机械研究所,上海光机所,seed_alias,1.0,seed,--别名-->
+上海市侨界专业人士联谊会,上海市侨专联,closure,1.0,rule,并查集传递闭包
+黄浦区,上海黄浦区,llm,0.85,llm,地点行政/地点行政
+Meet with Apple,与Apple会面交流,seed_alias,1.0,seed,--又名-->
+2026世界互联网大会乌镇峰会,世界互联网大会乌镇峰会,closure,1.0,rule,并查集传递闭包
+世界互联网大会,世界互联网大会乌镇峰会,closure,1.0,rule,并查集传递闭包
+广东省东莞市,东莞,llm,0.85,llm,地点行政/地点行政
+奕派 M8,东风奕派 M8,llm,0.85,llm,产品型号/产品型号
+奕派M8,东风奕派 M8,norm_key,0.98,rule,归一 key=奕派M8
+CSF,中国仿真学会,seed_alias,1.0,seed,--简称-->
+国家医疗保障局,中国国家医疗保障局,llm,0.85,llm,机构组织/机构组织
+国家市场监督管理总局,中国国家市场监督管理总局,llm,0.85,llm,机构组织/机构组织
+CSIG,中国图像图形学会,seed_alias,1.0,seed,--简称-->
+外交部,中国外交部,llm,0.85,llm,机构组织/机构组织
+中国空间技术研究院,中国航天科技集团五院,seed_alias,1.0,seed,--别名-->
+中国船舶集团,中国船舶集团有限公司,llm,0.85,llm,机构组织/机构组织
+CCF,中国计算机学会,seed_alias,1.0,seed,--别名-->
+青藏集团公司,中国铁路青藏集团有限公司,seed_alias,1.0,seed,--简称-->
+中国新闻网,中新网,closure,1.0,rule,并查集传递闭包
+中国航空工业集团,中航工业,closure,1.0,rule,并查集传递闭包
+中青报·中青网,中青报,llm,0.85,llm,机构组织/机构组织
+中青网,中青报,llm,0.85,llm,机构组织/机构组织
+丹佛斯集团,丹佛斯,norm_key,0.98,rule,归一 key=丹佛斯
+CTA,主动脉CT血管造影,seed_alias,1.0,seed,--简称-->
+浙江乌镇,乌镇,llm,0.85,llm,地点行政/地点行政
+合肥乾原量子科技有限公司,乾原量子,closure,1.0,rule,并查集传递闭包
+云南省,云南,llm,0.85,llm,地点行政/地点行政
+金山世界号卫星,云遥一号28星,seed_alias,1.0,seed,--又名-->
+乌镇互联网之光博览会,互联网之光博览会,llm,0.85,llm,活动事件/活动事件
+互联网之光,互联网之光博览会,seed_alias,1.0,seed,--又称-->
+亚太区,亚太,llm,0.85,llm,地点行政/地点行政
+亚太地区,亚太,llm,0.85,llm,地点行政/地点行政
+链主企业,产业链链主企业,llm,0.85,llm,泛称角色/泛称角色
+人民日报社,人民日报,closure,1.0,rule,并查集传递闭包
+ISHO,今日宜休,seed_alias,1.0,seed,--别名-->
+Ian Goldin,伊恩·戈尔丁,seed_alias,1.0,seed,--别名-->
+UniX AI,优理奇机器人,seed_alias,1.0,seed,--别名-->
+优理奇,优理奇机器人,seed_alias,1.0,seed,--简称-->
+元宝,元宝搜索,llm,0.85,llm,产品型号/产品型号
+MCM,元认知模型,seed_alias,1.0,seed,--简称-->
+先瑞达,先瑞达医疗,llm,0.85,llm,公司企业/公司企业
+光热发电,光热,llm,0.85,llm,技术概念/技术概念
+克里斯汀·姆万萨,克里斯汀,llm,0.85,llm,人物/人物
+Christelle,克里斯特尔,seed_alias,1.0,seed,--别名-->
+SAC/TC563,全国电子商务质量管理标准化技术委员会,seed_alias,1.0,seed,--全称-->
+GSMA,全球移动通信系统协会,seed_alias,1.0,seed,--简称-->
+身份号码,公民身份号码,llm,0.85,llm,泛称角色/泛称角色
+Lampros Stergioulas,兰普罗斯,seed_alias,1.0,seed,--又名-->
+Genie Master,具身Agent 框架 Genie Master,seed_alias,1.0,seed,--简称-->
+EEP,具身执行协议 EEP,seed_alias,1.0,seed,--简称-->
+中国航发湖南动力机械研究所,动研所,closure,1.0,rule,并查集传递闭包
+Lawrence Burns,劳伦斯·伯恩斯,seed_alias,1.0,seed,--又名-->
+北京公司,北京,norm_key,0.98,rule,归一 key=北京
+MAH制度,医疗器械注册人制度,seed_alias,1.0,seed,--简称-->
+十五五规划,十五五,llm,0.85,llm,作品内容/作品内容
+十五五规划纲要,十五五,llm,0.85,llm,作品内容/作品内容
+千问大模型,千问,llm,0.85,llm,产品型号/产品型号
+千问办公客户端,千问办公,llm,0.85,llm,产品型号/产品型号
+华中,华中地区,llm,0.85,llm,地点行政/地点行政
+华为终端BG,华为终端 BG,norm_key,0.98,rule,归一 key=华为终端BG
+江苏南京,南京,llm,0.85,llm,地点行政/地点行政
+南宁市,南宁,llm,0.85,llm,地点行政/地点行政
+广西南宁市,南宁,llm,0.85,llm,地点行政/地点行政
+中国航发南方工业有限公司,南方公司,closure,1.0,rule,并查集传递闭包
+福建厦门,厦门,llm,0.85,llm,地点行政/地点行政
+合肥市,合肥,llm,0.85,llm,地点行政/地点行政
+安徽合肥,合肥,llm,0.85,llm,地点行政/地点行政
+吉林省,吉林,llm,0.85,llm,地点行政/地点行政
+后轮转向,后轮转向系统,llm,0.85,llm,技术概念/技术概念
+哈啰,哈啰出行,llm,0.85,llm,公司企业/公司企业
+商汤,商汤科技,llm,0.85,llm,公司企业/公司企业
+国补,国家以旧换新,seed_alias,1.0,seed,--简称-->
+中国馆,国家展中国馆,llm,0.85,llm,地点设施/地点设施
+国家算力互联互通区域(河北)节点,国家算力互联互通区域节点,norm_key,0.98,rule,归一 key=国家算力互联互通区域节点
+中国国家能源局,国家能源局,llm,0.85,llm,机构组织/机构组织
+国网新疆电力,国网新疆电力有限公司,norm_key,0.98,rule,归一 key=国网新疆电力
+Apple Intelligence,国行版Apple智能,seed_alias,1.0,seed,--又称-->
+苹果AI,国行版Apple智能,seed_alias,1.0,seed,--又称-->
+IMO,国际海事组织,seed_alias,1.0,seed,--简称-->
+SCUFN,国际海底地名分委会,seed_alias,1.0,seed,--简称-->
+CES,国际消费类电子产品展览会,seed_alias,1.0,seed,--简称-->
+IMD,国际管理发展学院,seed_alias,1.0,seed,--简称-->
+IEA,国际能源署,seed_alias,1.0,seed,--简称-->
+OTA,在线升级推送,seed_alias,1.0,seed,--别名-->
+城区NOA,城区 NOA,norm_key,0.98,rule,归一 key=城区NOA
+城市导航辅助驾驶,城市NOA,closure,1.0,rule,并查集传递闭包
+基准站,基准站设施,llm,0.85,llm,泛称角色/泛称角色
+上海外高桥造船有限公司,外高桥造船,closure,1.0,rule,并查集传递闭包
+SIoT,多生态智能物联,seed_alias,1.0,seed,--简称-->
+MICC,多重独立电流控制(MICC)技术,seed_alias,1.0,seed,--简称-->
+中华区,大中华区,llm,0.85,llm,地点行政/地点行政
+大尺寸单晶,大尺寸单晶片,llm,0.85,llm,产品型号/产品型号
+人工智能大模型,大模型,llm,0.85,llm,技术概念/技术概念
+大医二院,大连医科大学附属第二医院,closure,1.0,rule,并查集传递闭包
+中国大陆,大陆,llm,0.85,llm,地点行政/地点行政
+天翼电信终端,天翼电信终端有限公司,norm_key,0.98,rule,归一 key=天翼电信终端
+orforglipron,奥氟格列隆,seed_alias,1.0,seed,--别名-->
+AITC,奥迪创新技术中心,seed_alias,1.0,seed,--简称-->
+金盾电池,宁德时代金盾电池,llm,0.85,llm,产品型号/产品型号
+AI World Engine,它石通用具身大模型AWE,closure,1.0,rule,并查集传递闭包
+G1,宇树G1,llm,0.85,llm,产品型号/产品型号
+宇树,宇树科技,llm,0.85,llm,公司企业/公司企业
+TrustC,安全编程语言TrustC,seed_alias,1.0,seed,--简称-->
+2026中国国际社会公共安全产品博览会,安博会,closure,1.0,rule,并查集传递闭包
+安徽省,安徽,llm,0.85,llm,地点行政/地点行政
+尊界S800,尊界 S800,norm_key,0.98,rule,归一 key=尊界S800
+可编程逻辑控制器,小型PLC,closure,1.0,rule,并查集传递闭包
+小米集团,小米,norm_key,0.98,rule,归一 key=小米
+山东省,山东,llm,0.85,llm,地点行政/地点行政
+山东省人社厅,山东省人力资源和社会保障厅,closure,1.0,rule,并查集传递闭包
+山东省地矿局,山东省地质矿产勘查开发局,seed_alias,1.0,seed,--简称-->
+山西省,山西,llm,0.85,llm,地点行政/地点行政
+EON,峰力昆仑,seed_alias,1.0,seed,--别名-->
+峰飞航空,峰飞航空科技,llm,0.85,llm,公司企业/公司企业
+中国工业和信息化部,工业和信息化部,llm,0.85,llm,机构组织/机构组织
+中国工信部,工信部,llm,0.85,llm,机构组织/机构组织
+SENAI,巴西国家工业培训服务机构,seed_alias,1.0,seed,--简称-->
+约尔格·布尔策,布尔策,llm,0.85,llm,人物/人物
+广东省,广东,closure,1.0,rule,并查集传递闭包
+联想万全混合词元母本工厂,张家口母本工厂,seed_alias,1.0,seed,--又称-->
+影视,影视公司,norm_key,0.98,rule,归一 key=影视
+德勤亚太物理人工智能卓越中心和实验室,德勤亚太物理人工智能卓越中心,llm,0.85,llm,机构组织/机构组织
+卡赫,德国卡赫,llm,0.85,llm,公司企业/公司企业
+山东德州,德州,llm,0.85,llm,地点行政/地点行政
+CSP,心脏传导系统起搏,seed_alias,1.0,seed,--简称-->
+华为擎云 HM650 系列,擎云HM650,norm_key,0.98,rule,归一 key=华为擎云HM650系列
+华为擎云HM650系列,擎云HM650,closure,1.0,rule,并查集传递闭包
+擎云 HM650,擎云HM650,norm_key,0.98,rule,归一 key=擎云HM650
+敦煌市,敦煌,closure,1.0,rule,并查集传递闭包
+新云公司,新云,norm_key,0.98,rule,归一 key=新云
+无境未来动力科技,无境动力,closure,1.0,rule,并查集传递闭包
+智元机器人,智元,seed_alias,1.0,seed,--又称-->
+智慧生态2.0,智慧生态 2.0,norm_key,0.98,rule,归一 key=智慧生态2.0
+AI智能体,智能体,llm,0.85,llm,泛称角色/泛称角色
+人工智能体,智能体,llm,0.85,llm,泛称角色/泛称角色
+智能体PC,智能体 PC,norm_key,0.98,rule,归一 key=智能体PC
+智能体终端设备,智能体终端,llm,0.85,llm,泛称角色/泛称角色
+Best of Innovation,最佳创新奖,seed_alias,1.0,seed,--又称-->
+第十四届海峡两岸机械产业博览会,机博会,closure,1.0,rule,并查集传递闭包
+东华大学材料科学与工程学院,材料科学与工程学院,llm,0.85,llm,机构组织/机构组织
+浙江杭州,杭州,llm,0.85,llm,地点行政/地点行政
+Distinguished Winners,杰出获奖者,seed_alias,1.0,seed,--又名-->
+极米科技股份有限公司,极米科技,closure,1.0,rule,并查集传递闭包
+格尔木市,格尔木,llm,0.85,llm,地点行政/地点行政
+广西桂林漓佳金属有限责任公司,桂林漓佳公司,closure,1.0,rule,并查集传递闭包
+桂林漓佳金属有限责任公司,桂林漓佳公司,llm,0.85,llm,机构组织/机构组织
+桐乡市,桐乡,llm,0.85,llm,地点行政/地点行政
+梅赛德斯-奔驰,梅赛德斯-奔驰集团,norm_key,0.98,rule,归一 key=梅赛德斯-奔驰
+TopoEurope,欧洲四维地形演化计划,seed_alias,1.0,seed,--简称-->
+武汉产业创新发展研究院,武创院,closure,1.0,rule,并查集传递闭包
+比亚迪集团,比亚迪,norm_key,0.98,rule,归一 key=比亚迪
+海洋网,比亚迪海洋网,llm,0.85,llm,公司企业/公司企业
+江淮汽车,江淮,llm,0.85,llm,公司企业/公司企业
+江苏省,江苏,llm,0.85,llm,地点行政/地点行政
+浑南区,沈阳市浑南区,closure,1.0,rule,并查集传递闭包
+张家口,河北张家口,llm,0.85,llm,地点行政/地点行政
+河南省,河南,closure,1.0,rule,并查集传递闭包
+河源,河源市,llm,0.85,llm,地点行政/地点行政
+上海泽德曼医药科技有限公司,泽德曼医药,closure,1.0,rule,并查集传递闭包
+浙江省,浙江,llm,0.85,llm,地点行政/地点行政
+浙大,浙江大学,seed_alias,1.0,seed,--简称-->
+海西州,海西蒙古族藏族自治州,seed_alias,1.0,seed,--简称-->
+香港浸会大学,浸大,closure,1.0,rule,并查集传递闭包
+湖北省,湖北,llm,0.85,llm,地点行政/地点行政
+荆州,湖北荆州,llm,0.85,llm,地点行政/地点行政
+爆胎稳行2.0,爆胎稳行 2.0,norm_key,0.98,rule,归一 key=爆胎稳行2.0
+物理AI技术,物理AI,llm,0.85,llm,技术概念/技术概念
+王某某,王某,closure,1.0,rule,并查集传递闭包
+环心医疗,环心医疗科技(苏州)有限公司,seed_alias,1.0,seed,--简称-->
+甘肃省,甘肃,llm,0.85,llm,地点行政/地点行政
+Oracle,甲骨文,seed_alias,1.0,seed,--别名-->
+pK,皮开尔文,seed_alias,1.0,seed,--缩写-->
+GRID-14B,真知,seed_alias,1.0,seed,--别名-->
+新材料之王,石墨烯,seed_alias,1.0,seed,--又称-->
+Neural Accelerator,神经网络加速器,seed_alias,1.0,seed,--又称-->
+Neural Engine,神经网络引擎,seed_alias,1.0,seed,--又称-->
+神舟二十三号,神舟二十三号载人飞船,llm,0.85,llm,产品型号/产品型号
+神舟二十四号,神舟二十四号载人飞船,llm,0.85,llm,产品型号/产品型号
+科技助暖行动,科技助暖,llm,0.85,llm,活动事件/活动事件
+秦巴山,秦巴山区,llm,0.85,llm,地点行政/地点行政
+中国科学院空间应用工程与技术中心,空间应用中心,seed_alias,1.0,seed,--别名-->
+FCD,第一罐混凝土浇筑,seed_alias,1.0,seed,--又称-->
+第九届进博会,第九届中国国际进口博览会,seed_alias,1.0,seed,--全称-->
+进博会,第九届中国国际进口博览会,seed_alias,1.0,seed,--简称-->
+全国人民代表大会常务委员会,第十四届全国人民代表大会常务委员会,llm,0.85,llm,机构组织/机构组织
+Miguel Silva,米格尔,seed_alias,1.0,seed,--又名-->
+尼科莱利斯,米格尔·尼科莱利斯,llm,0.85,llm,人物/人物
+大湾区,粤港澳大湾区,llm,0.85,llm,地点行政/地点行政
+STCO,系统技术共同优化,seed_alias,1.0,seed,--简称-->
+特努斯,约翰·特努斯,llm,0.85,llm,人物/人物
+Nahima Díaz,纳希玛·迪亚兹,seed_alias,1.0,seed,--又名-->
+OECD,经济合作与发展组织,seed_alias,1.0,seed,--简称-->
+算力网,统一算力网,llm,0.85,llm,技术概念/技术概念
+绿电储能算力一体化解决方案,绿色算力舱,seed_alias,1.0,seed,--又称-->
+罗克韦尔自动化(中国)有限公司,罗克韦尔自动化,norm_key,0.98,rule,归一 key=罗克韦尔自动化
+斯坦福大学,美国斯坦福大学,llm,0.85,llm,机构组织/机构组织
+美的集团,美的,norm_key,0.98,rule,归一 key=美的
+第二十届中国(重庆)老年产业博览会,老博会,closure,1.0,rule,并查集传递闭包
+教科文组织执行局,联合国教科文组织执行局,llm,0.85,llm,机构组织/机构组织
+COP31,联合国气候变化框架公约第三十一次缔约方大会,closure,1.0,rule,并查集传递闭包
+GIAC,联想全球行业分析师大会,seed_alias,1.0,seed,--简称-->
+IDG,联想智能设备业务集团,seed_alias,1.0,seed,--简称-->
+智能设备业务集团,联想智能设备业务集团,llm,0.85,llm,机构组织/机构组织
+联想,联想集团,norm_key,0.98,rule,归一 key=联想
+中风,脑卒中,seed_alias,1.0,seed,--又称-->
+DBS,脑深部电刺激(DBS)疗法,seed_alias,1.0,seed,--简称-->
+脑起搏器,脑深部电刺激(DBS)疗法,seed_alias,1.0,seed,--又称-->
+腾讯公司,腾讯,norm_key,0.98,rule,归一 key=腾讯
+腾讯集团,腾讯,norm_key,0.98,rule,归一 key=腾讯
+混元,腾讯混元,llm,0.85,llm,产品型号/产品型号
+自动化,自动化技术,llm,0.85,llm,技术概念/技术概念
+北京致敬未知科技有限公司,致敬未知,closure,1.0,rule,并查集传递闭包
+EEDI,船舶能效设计指数,seed_alias,1.0,seed,--简称-->
+良品计划,良品计划公司,norm_key,0.98,rule,归一 key=良品计划
+BPH,良性前列腺增生,seed_alias,1.0,seed,--简称-->
+Scottish Mortgage,苏格兰抵押信托,seed_alias,1.0,seed,--又名-->
+H100 GPU,英伟达H100 GPU,llm,0.85,llm,产品型号/产品型号
+WWDC,苹果全球开发者大会,seed_alias,1.0,seed,--又名-->
+虎鲸文娱,虎鲸文娱集团,norm_key,0.98,rule,归一 key=虎鲸文娱
+西藏自治区,西藏,llm,0.85,llm,地点行政/地点行政
+VLA,视觉-语言-动作,seed_alias,1.0,seed,--简称-->
+Token,词元,seed_alias,1.0,seed,--又称-->
+特斯拉赛博无人驾驶电动车,赛博无人驾驶电动车,closure,1.0,rule,并查集传递闭包
+超级冰箱,超冷原子物理实验系统,seed_alias,1.0,seed,--别名-->
+软银集团,软银公司,norm_key,0.98,rule,归一 key=软银
+辽宁,辽宁省,llm,0.85,llm,地点行政/地点行政
+阿里巴巴达摩院,达摩院,llm,0.85,llm,机构组织/机构组织
+CSA,连接标准联盟,seed_alias,1.0,seed,--简称-->
+河南郑州,郑州,llm,0.85,llm,地点行政/地点行政
+重庆,重庆市,llm,0.85,llm,地点行政/地点行政
+Galbot ET1,银河星仔,seed_alias,1.0,seed,--又称-->
+银河通用机器人,银河通用,llm,0.85,llm,公司企业/公司企业
+长三角地区,长三角,closure,1.0,rule,并查集传递闭包
+Yan Junjie,闫俊杰,seed_alias,1.0,seed,--又名-->
+Asthildur Osk Einarsdottir,阿丝希尔德,seed_alias,1.0,seed,--又名-->
+西藏阿里地区,阿里地区,llm,0.85,llm,地点行政/地点行政
+阿里,阿里巴巴集团,llm,0.85,llm,公司企业/公司企业
+阿里巴巴,阿里巴巴集团,norm_key,0.98,rule,归一 key=阿里巴巴
+雷鸟创新技术(深圳)有限公司,雷鸟创新,closure,1.0,rule,并查集传递闭包
+西迪·穆罕默德·本·阿卜杜拉大学,非斯西迪·穆罕默德·本·阿卜杜拉大学,closure,1.0,rule,并查集传递闭包
+PMO,项目管理办公室,closure,1.0,rule,并查集传递闭包
+顺丰,顺丰速运,llm,0.85,llm,公司企业/公司企业
+港大,香港大学,llm,0.85,llm,机构组织/机构组织
+特区政府,香港特区政府,closure,1.0,rule,并查集传递闭包
+中国香港理工大学,香港理工大学,closure,1.0,rule,并查集传递闭包
+港科大,香港科技大学,seed_alias,1.0,seed,--简称-->
+香港证券及期货事务监察委员会,香港证监会,closure,1.0,rule,并查集传递闭包
+蒙塔涅斯,马丁·蒙塔涅斯,llm,0.85,llm,人物/人物
+Mark Scott,马克·斯科特,seed_alias,1.0,seed,--又名-->
+MZM,马赫-曾德尔调制器,seed_alias,1.0,seed,--简称-->
+高盛,高盛集团,norm_key,0.98,rule,归一 key=高盛
+高通公司,高通,norm_key,0.98,rule,归一 key=高通
+高速NOA,高速 NOA,norm_key,0.98,rule,归一 key=高速NOA
+鸿蒙系统,鸿蒙,llm,0.85,llm,技术概念/技术概念
+麒麟 X90 芯片,麒麟X90芯片,norm_key,0.98,rule,归一 key=麒麟X90芯片
+Debora Comparin,黛博拉,seed_alias,1.0,seed,--又名-->
+陕西龙麟纳纤材料科技有限公司,龙麟纳纤,closure,1.0,rule,并查集传递闭包

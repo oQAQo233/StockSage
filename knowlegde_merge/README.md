@@ -120,6 +120,9 @@ word_count: 779
 | 原文 | `data/md/<article_id>.md` | Markdown + YAML 头 |
 | 给人看的清单 | `out/labels/` | Markdown / CSV |
 
+这些文件都已经随仓库提交了（`data/md/` 541 篇、`out/` 下 5 个文件和 `out/labels/`），
+克隆下来就能直接用，不需要重新跑一遍流程。
+
 ### 3.2 图谱本体：`out/kg.sqlite3`
 
 一个文件装下所有东西，用任何 SQLite 客户端（DB Browser for SQLite、DBeaver、Python 的 `sqlite3`）都能打开。
@@ -322,12 +325,10 @@ knowledge_merge/
 │  ├─ kg/              # 三元组抽取（KGGen 后端）
 │  └─ schema/          # 后处理四步：关系归一、实体类型、合并、消歧
 ├─ tools/              # 一些单独跑的脚本（看图、导宽表）
-└─ docs/               # 过程笔记（PIPELINE.md 是后处理四步的实现细节；
-                       # 其余是开发过程中的记录，已过时，仅供参考）
 ```
 
 **`src/newskg/schema/`** 是后处理那四步的代码，每一步都能单独重跑、断点续跑
-（模型调用的结果有缓存，重跑不会重复花钱）。细节见 `docs/PIPELINE.md`。
+（模型调用的结果有缓存，重跑不会重复花钱）。
 
 ---
 
